@@ -1,0 +1,305 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:WindowedApplication xmlns:fx="http://ns.adobe.com/mxml/2009"
+					   xmlns:s="library://ns.adobe.com/flex/spark"
+					   xmlns:mx="library://ns.adobe.com/flex/mx"
+					   creationComplete="init()"
+					   width="860" height="700">
+	<fx:Declarations>
+		<s:RadioButtonGroup id="tileRadioGroup"/>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	
+	<fx:Script> 
+		<![CDATA[ 
+			import com.jack.util.Delay;
+			import com.jack.util.DrawUtil;
+			import com.jack.util.NumberUtil;
+			import com.jack.vo.MapVO;
+			
+			import mx.controls.Alert;
+			
+			private var EMPTY_COLOR:uint = 0xffffff;
+			private var ITEM_COLOR:uint = 0x00ff00;
+			private var TAG_EMPTY:int = -1;
+			private var COL_DEFAULT:int = 8;
+			private var ROW_DEFAULT:int = 8;
+			private var ITEMS_DEFAULT:int = 8;
+			
+			public var mapCol:int;
+			public var mapRow:int;
+			private var nExistItems:int;
+			private var curColorSelected:uint = EMPTY_COLOR;
+
+			private var editPanel:Sprite
+			private var map:MapVO;
+
+			private var file:FileReference;
+			
+			public function init():void
+			{
+				map = new MapVO();			
+				
+				editPanel = new Sprite();				
+				editPanel.graphics.beginFill(0xffffff, 1);
+				editPanel.graphics.drawRect(0, 0, 500, 500);
+				editPanel.graphics.endFill();
+				editPanel.x = 27;
+				editPanel.y = 70;
+				test.rawChildren.addChild(editPanel);
+				// init the default edit container
+				DrawUtil.initMapEditContainer(editPanel);
+				DrawUtil.drawGridding(COL_DEFAULT, ROW_DEFAULT);
+				mapCol=COL_DEFAULT;
+				mapRow=ROW_DEFAULT;
+				widthTxt.text = mapCol.toString();				
+				heightTxt.text = mapRow.toString();		
+				map.setMapSize(mapCol, mapRow);
+				// default selected item mode
+				itemRadio.selected = true;
+				curColorSelected = ITEM_COLOR;
+				// add mouse event for map edit container
+				editPanel.addEventListener(MouseEvent.CLICK, onEditContainerClick);
+				editPanel.addEventListener(MouseEvent.MOUSE_DOWN, onEditContainerMouseDown);			
+				addEventListener(MouseEvent.MOUSE_UP, onStageMouseUp);
+				addEventListener(Event.DEACTIVATE, onDeactivate);
+			}
+			
+			protected function onGenerateMap(event:MouseEvent):void
+			{
+				var w:int = int(widthTxt.text);
+				var h:int = int(heightTxt.text);
+				
+				// can not be odd
+				if(w >0 && h > 0 && 
+					((w*h)&1) == 0)
+				{
+					mapCol = w;
+					mapRow = h;
+					DrawUtil.drawGridding(w, h);
+					map.setMapSize(mapCol, mapRow);
+				}
+			}
+			
+			protected function onEmptyItemRadioSelected(event:MouseEvent):void
+			{
+				curColorSelected = EMPTY_COLOR;
+			}
+			
+			protected function onItemRadioSelected(event:MouseEvent):void
+			{
+				curColorSelected = ITEM_COLOR;
+			}
+			
+			protected function onSaveMap(event:MouseEvent):void
+			{
+				if(nExistItems == 0 || !NumberUtil.isEven(nExistItems))
+				{
+					Alert.show("Items must be even number!", "Error!",4, test);
+					return;
+				}
+				var str:String = map.exportToString();
+				var file:FileReference = new FileReference();
+				file.save(str, "map.txt");
+			}
+			
+			protected function onClearMap(event:MouseEvent):void
+			{
+				DrawUtil.clear();
+				nExistItems = 0;
+			}
+			
+			protected function onRandomGenerateMap(event:MouseEvent):void
+			{
+				map.random();
+				nExistItems = 0;
+				
+				for (var i:int = 0; i < mapCol; i++) 
+				{
+					for (var j:int = 0; j < mapRow; j++) 
+					{
+						var n:int = map.getItem(i, j);
+						// draw map
+						
+						// update the map data
+						if(n < 0)
+						{
+							DrawUtil.colorTile(i, j, EMPTY_COLOR);
+							map.updateItem(i, j, -1);
+							nExistItems--;
+						}
+						else
+						{
+							DrawUtil.colorTile(i, j, ITEM_COLOR);
+							map.updateItem(i, j, 1);
+							nExistItems++;
+						}
+					}					
+				}				
+			}
+			
+			protected function onEditContainerClick(event:MouseEvent):void
+			{
+				// draw map
+				colorTile(event.localX, event.localY);
+			}
+			
+			protected function onEditContainerMouseDown(event:MouseEvent):void
+			{
+				editPanel.addEventListener(MouseEvent.MOUSE_MOVE, onEditContainerMouseMove);
+				editPanel.addEventListener(MouseEvent.MOUSE_UP, onEditContainerMouseUp);
+				
+				// draw map
+				colorTile(event.localX, event.localY);
+			}
+			
+			protected function onEditContainerMouseUp(event:MouseEvent):void
+			{
+				editPanel.removeEventListener(MouseEvent.MOUSE_MOVE, onEditContainerMouseMove);
+				editPanel.removeEventListener(MouseEvent.MOUSE_UP, onEditContainerMouseUp);
+			}
+			
+			protected function onEditContainerMouseMove(event:MouseEvent):void
+			{
+				// draw map
+				colorTile(event.localX, event.localY);
+			}
+			
+			private function colorTile(mx:Number, my:Number):void
+			{
+				var i:int = (mx/editPanel.width)*mapCol;
+				var j:int = (my/editPanel.height)*mapRow;
+				i = (i >= mapCol) ? mapCol-1 : i;
+				j = (j >= mapRow) ? mapRow-1 : j;
+				colorTiles(i, j, curColorSelected);
+			}
+			
+			private function colorTiles(i:int, j:int, color:uint):void
+			{
+				if(map.getItem(i, j) == 1 && color != EMPTY_COLOR)
+				{
+					return;
+				}
+				if(map.getItem(i, j) == -1 && color == EMPTY_COLOR)
+				{
+					return;
+				}
+				// draw map
+				DrawUtil.colorTile(i, j, color);
+				// update the map data
+				if(color == EMPTY_COLOR)
+				{
+					map.updateItem(i, j, -1);
+					nExistItems--;
+				}
+				else
+				{
+					map.updateItem(i, j, 1);
+					nExistItems++;
+				}
+			}
+			
+			protected function onStageMouseUp(event:MouseEvent):void
+			{
+				if(editPanel.hasEventListener(MouseEvent.MOUSE_MOVE))
+					editPanel.removeEventListener(MouseEvent.MOUSE_MOVE, onEditContainerMouseMove);
+				if(editPanel.hasEventListener(MouseEvent.MOUSE_UP))
+					editPanel.removeEventListener(MouseEvent.MOUSE_UP, onEditContainerMouseUp);
+			}
+			
+			protected function onDeactivate(event:Event):void
+			{
+				if(editPanel.hasEventListener(MouseEvent.MOUSE_MOVE))
+					editPanel.removeEventListener(MouseEvent.MOUSE_MOVE, onEditContainerMouseMove);
+				if(editPanel.hasEventListener(MouseEvent.MOUSE_UP))
+					editPanel.removeEventListener(MouseEvent.MOUSE_UP, onEditContainerMouseUp);
+			}
+			
+			protected function onOpenMap(event:MouseEvent):void
+			{
+				var file:FileReference = new FileReference();
+				file.addEventListener(Event.SELECT, onFileSelected);
+				var swfTypeFilter:FileFilter=new FileFilter("txt Files", "*.txt;");
+				file.browse([swfTypeFilter]);
+			}
+			
+			protected function onFileSelected(event:Event):void
+			{
+				file = event.currentTarget as FileReference;
+				//content.picTxt.text=fileReference.name;
+				file.addEventListener(Event.COMPLETE, onFileLoaded);
+				
+				Delay.doIt(10, loadMapFile)
+			}
+			
+			private function loadMapFile():void
+			{
+				file.load();
+			}
+			
+			private function onFileLoaded(e:Event):void
+			{
+				var file:FileReference=e.target as FileReference;
+				file.removeEventListener(Event.COMPLETE, onFileLoaded);
+				var bytearray:ByteArray=file.data;
+				var mapStr:String = bytearray.readUTFBytes(bytearray.length);
+				
+				// update the map
+				map.importFromString(mapStr);
+				map.update();
+				refreshMap();
+			}
+			
+			// Refresh the whole map base on the map data.
+			private function refreshMap():void
+			{
+				// redraw the map gridding
+				mapCol = map.width;
+				mapRow = map.height;
+				DrawUtil.drawGridding(mapCol, mapRow);
+				
+				nExistItems = 0;
+				
+				// refresh the map gridding
+				for (var i:int = 0; i < mapCol; i++) 
+				{
+					for (var j:int = 0; j < mapRow; j++) 
+					{
+						var n:int = map.getItem(i, j);						
+						// update the map data
+						if(n < 0)
+						{
+							DrawUtil.colorTile(i, j, EMPTY_COLOR);
+							map.updateItem(i, j, -1);
+							nExistItems--;
+						}
+						else
+						{
+							DrawUtil.colorTile(i, j, ITEM_COLOR);
+							map.updateItem(i, j, 1);
+							nExistItems++;
+						}
+					}					
+				}			
+			}
+			
+		]]>
+	</fx:Script>
+	<s:TextInput id="widthTxt" x="683" y="138" width="81"/>
+	<s:TextInput id="heightTxt" x="683" y="168" width="81"/>
+	<s:Button id="generateBtn" x="687" y="376" label="generate" click="onGenerateMap(event)"/>
+	<s:VGroup id="itemSelectGroup" x="683" y="238" width="79" height="49">
+		<s:RadioButton id="emptyItemRadio" label="empty" click="onEmptyItemRadioSelected(event)"
+					   groupName="tileRadioGroup"/>
+		<s:RadioButton id="itemRadio" width="67" height="17" label="item" click="onItemRadioSelected(event)"
+					   groupName="tileRadioGroup"/>
+	</s:VGroup>
+	<s:Button id="saveBtn" x="127" y="10" label="Save" click="onSaveMap(event)"/>
+	<s:Button id="clearBtn" x="687" y="320" label="clear" click="onClearMap(event)"/>
+	<s:Button id="randomBtn" x="687" y="349" label="random" click="onRandomGenerateMap(event)"/>
+	<s:Label x="772" y="142" width="62" height="22" fontSize="20" text="width"/>
+	<s:Label x="772" y="170" width="62" height="22" fontSize="20" text="height"/>
+	<mx:Canvas id="test" x="19" y="39" width="634" height="530">
+	</mx:Canvas>
+	<s:Button id="openMapBtn" x="31" y="10" label="Open" click="onOpenMap(event)"/>
+	
+</s:WindowedApplication>
