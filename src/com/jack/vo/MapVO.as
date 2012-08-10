@@ -8,15 +8,18 @@ package com.jack.vo
 	public class MapVO
 	{
 		public var name:String;
+		public var level:int;
 		public var width:int;
 		public var height:int;
+		private var realWidth:int;
+		private var realHeight:int;
 
 		private var TAG_EMPTY:int = -1;
-		private var ITEM_EXIST:int = 1;
+		private var ITEM_POKER:int = 1;
+		private var ITEM_TOOL:int = 2;
 		
-		private var array:Array2;
+		private var map:Array2;
 
-		
 		public function MapVO()
 		{
 			
@@ -24,15 +27,17 @@ package com.jack.vo
 		
 		public function setMapSize(w:int, h:int):void
 		{
-			width = w;
-			height = h;
-			array = new Array2(width, height);
+			realWidth = w;
+			realHeight = h;
+			width = realWidth+2;
+			height = realHeight+2;
+			map = new Array2(width, height);
 			// default value was -1;
 			for (var i:int = 0; i < width; i++) 
 			{
 				for (var j:int = 0; j < height; j++) 
 				{
-					array.set(i, j, TAG_EMPTY);
+					map.set(i, j, TAG_EMPTY);
 				}				
 			}		
 		}
@@ -41,7 +46,7 @@ package com.jack.vo
 		{
 			if(x >=0 && x < width && y >= 0 && y < height)
 			{
-				return int(array.get(x, y));
+				return int(map.get(x+1, y+1));
 			}
 			
 			return -2;
@@ -51,26 +56,28 @@ package com.jack.vo
 		{
 			if(x >=0 && x < width && y >= 0 && y < height)
 			{
-				array.set(x, y, value);
+				map.set(x+1, y+1, value);
 			}
 		}
 		
-		public function random():void
+		public function random(nPoker:int, nTool:int):void
 		{
-			var nRandoms:int = width*height;
-			if(!NumberUtil.isEven(nRandoms) || nRandoms < 2)
+			if(!NumberUtil.isEven(nPoker) || !NumberUtil.isEven(nTool))
 			{
 				return;
 			}
 			
-			var tmp:int = nRandoms;
-			var arr:Array=[];
-			while(tmp > 0)
+			var arr:Array=new Array(width*height);
+			var k:int;
+			for (k = 0; k < nPoker; k++) 
 			{
-				arr.push(ITEM_EXIST);
-				arr.push(ITEM_EXIST);
-				tmp -= 2;
+				arr[k] = ITEM_POKER;
 			}
+			for (k = nPoker; k < nPoker+nTool; k++) 
+			{
+				arr[k] = ITEM_TOOL;
+			}
+			
 			// shuffle the items
 			ArrayUtil.shuffle(arr);
 			
@@ -78,31 +85,48 @@ package com.jack.vo
 			{
 				for (var j:int = 0; j < height; j++) 
 				{
-					array.set(i, j, arr[i*height+j]);
+					map.set(i, j, arr[i*height+j]);
 				}				
 			}			
-		}
-		
-		public function shuffleMap():void
-		{
-			
 		}
 		
 		public function exportToString():String
 		{
 			var str:String = "";
-			str += (width.toString() + "x" + height.toString() + "\n");
 			for (var i:int = 0; i < height; i++) 
 			{
 				for (var j:int = 0; j < width; j++) 
 				{
-					str += (String(array.get(j, i)) + ",");
+					str += (String(map.get(j, i)) + ",");
 				}			
-				str = str.substring(0, str.length);
-				str += "\n";
 			}	
+			str = str.substring(0, str.length-1);
 			trace(str);
 			return str;
+		}
+		
+		public function exportAsXML():XML
+		{
+			var str:String = exportToString();
+			
+			var xml:XML = 
+				<maps>
+				</maps>;
+			
+			var map:XML =
+				<map>
+				</map>;			
+			map.appendChild(<name>{name}</name>);
+			map.appendChild(<level>{level}</level>);
+			map.appendChild(<width>{width}</width>);
+			map.appendChild(<height>{height}</height>);
+			map.appendChild(<realWidth>{realWidth}</realWidth>);
+			map.appendChild(<realHeight>{realHeight}</realHeight>);
+			map.appendChild(<data>{str}</data>);
+			
+			xml.appendChild(map);
+			
+			return xml;
 		}
 		
 		public function importFromString(str:String):void
@@ -126,22 +150,20 @@ package com.jack.vo
 			var tmp:String = arr.join("");
 			arr = tmp.split(",");
 			
-			width = w;
-			height = h;
-			array = new Array2(width, height);
+			realWidth = w;
+			realHeight = h;
+			width = realWidth+2;
+			height = realHeight+2;
+			map = new Array2(width, height);
 			// default value was -1;
 			for (var i:int = 0; i < height; i++) 
 			{
 				for (var j:int = 0; j < width; j++) 
 				{
-					array.set(j, i, int(arr[i*width + j]));
+					map.set(j, i, int(arr[i*width + j]));
 				}				
 			}		
 		}
-		
-		public function update():void
-		{
-			
-		}
+
 	}
 }

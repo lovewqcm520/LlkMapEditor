@@ -31,7 +31,7 @@
 			private var curColorSelected:uint = EMPTY_COLOR;
 
 			private var editPanel:Sprite
-			private var map:MapVO;
+			private var map:MapVO; 
 
 			private var file:FileReference;
 			
@@ -85,7 +85,12 @@
 				curColorSelected = EMPTY_COLOR;
 			}
 			
-			protected function onItemRadioSelected(event:MouseEvent):void
+			protected function onPokerRadioSelected(event:MouseEvent):void
+			{
+				curColorSelected = ITEM_COLOR;
+			}
+			
+			protected function onToolRadioSelected(event:MouseEvent):void
 			{
 				curColorSelected = ITEM_COLOR;
 			}
@@ -97,9 +102,9 @@
 					Alert.show("Items must be even number!", "Error!",4, test);
 					return;
 				}
-				var str:String = map.exportToString();
+				var xml:XML = map.exportAsXML();
 				var file:FileReference = new FileReference();
-				file.save(str, "map.txt");
+				file.save(xml, "map.xml");
 			}
 			
 			protected function onClearMap(event:MouseEvent):void
@@ -110,7 +115,7 @@
 			
 			protected function onRandomGenerateMap(event:MouseEvent):void
 			{
-				map.random();
+				map.random(0, 0);
 				nExistItems = 0;
 				
 				for (var i:int = 0; i < mapCol; i++) 
@@ -245,7 +250,6 @@
 				
 				// update the map
 				map.importFromString(mapStr);
-				map.update();
 				refreshMap();
 			}
 			
@@ -284,22 +288,44 @@
 			
 		]]>
 	</fx:Script>
-	<s:TextInput id="widthTxt" x="683" y="138" width="81"/>
-	<s:TextInput id="heightTxt" x="683" y="168" width="81"/>
-	<s:Button id="generateBtn" x="687" y="376" label="generate" click="onGenerateMap(event)"/>
-	<s:VGroup id="itemSelectGroup" x="683" y="238" width="79" height="49">
+	<s:VGroup id="itemSelectGroup" x="682" y="66" width="81" height="74">
+		<s:TextInput id="widthTxt" width="81"/>
+		<s:TextInput id="heightTxt" width="81"/>
+		<s:Button id="generateBtn" label="generate" click="onGenerateMap(event)"/>
 		<s:RadioButton id="emptyItemRadio" label="empty" click="onEmptyItemRadioSelected(event)"
 					   groupName="tileRadioGroup"/>
-		<s:RadioButton id="itemRadio" width="67" height="17" label="item" click="onItemRadioSelected(event)"
+		<s:RadioButton id="itemRadio" width="67" height="17" label="poker" click="onPokerRadioSelected(event)"
 					   groupName="tileRadioGroup"/>
+		<s:RadioButton id="toolRadio" width="67" height="17" label="tool" click="onToolRadioSelected(event)"
+					   groupName="tileRadioGroup"/>
+		<s:Button id="clearBtn" label="clear" click="onClearMap(event)"/>
+		<s:Button id="randomBtn" label="random" click="onRandomGenerateMap(event)"/>
+		<s:Label width="62" height="22" fontSize="20" text="width"/>
+		<s:Label width="62" height="22" fontSize="20" text="height"/>
+		<s:TextInput id="itemTxt" width="42"/>
+		<s:TextInput id="toolTxt" width="39"/>
+		<s:DataGrid height="152" requestedRowCount="4">
+			<s:columns>
+				<s:ArrayList>
+					<s:GridColumn dataField="dataField1" headerText="Map"></s:GridColumn>
+				</s:ArrayList>
+			</s:columns>
+			<s:typicalItem>
+				<fx:Object dataField1="Sample Data" dataField2="Sample Data" dataField3="Sample Data"></fx:Object>
+			</s:typicalItem>
+			<s:ArrayList>
+				<fx:Object dataField1="data1" dataField2="data1" dataField3="data1"></fx:Object>
+				<fx:Object dataField1="data2" dataField2="data2" dataField3="data2"></fx:Object>
+				<fx:Object dataField1="data3" dataField2="data3" dataField3="data3"></fx:Object>
+				<fx:Object dataField1="data4" dataField2="data4" dataField3="data4"></fx:Object>
+			</s:ArrayList>
+		</s:DataGrid>
 	</s:VGroup>
-	<s:Button id="saveBtn" x="127" y="10" label="Save" click="onSaveMap(event)"/>
-	<s:Button id="clearBtn" x="687" y="320" label="clear" click="onClearMap(event)"/>
-	<s:Button id="randomBtn" x="687" y="349" label="random" click="onRandomGenerateMap(event)"/>
-	<s:Label x="772" y="142" width="62" height="22" fontSize="20" text="width"/>
-	<s:Label x="772" y="170" width="62" height="22" fontSize="20" text="height"/>
-	<mx:Canvas id="test" x="19" y="39" width="634" height="530">
+	<s:Button id="saveBtn" x="560" y="148" label="Save" click="onSaveMap(event)"/>
+	<mx:Canvas id="test" x="19" y="66" width="484" height="389">
 	</mx:Canvas>
-	<s:Button id="openMapBtn" x="31" y="10" label="Open" click="onOpenMap(event)"/>
+	<s:Button id="openMapBtn" x="560" y="196" label="Open" click="onOpenMap(event)"/>
+	<mx:MenuBar x="100" y="16" width="102" rollOverColor="#DCD8D8" selectionColor="#EFE0E0"
+				toolTip="Create new project"></mx:MenuBar>
 	
 </s:WindowedApplication>
