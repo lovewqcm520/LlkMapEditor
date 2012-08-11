@@ -4,6 +4,7 @@
 					   xmlns:mx="library://ns.adobe.com/flex/mx"
 					   creationComplete="init()"
 					   width="860" height="700">
+	<fx:Style source="LlkMapEditor.css"/>
 	<fx:Declarations>
 		<s:RadioButtonGroup id="tileRadioGroup"/>
 		<!-- Place non-visual elements (e.g., services, value objects) here -->
@@ -11,12 +12,20 @@
 	
 	<fx:Script> 
 		<![CDATA[ 
+			import com.jack.control.events.EditorEvent;
+			import com.jack.control.events.EventController;
 			import com.jack.util.Delay;
 			import com.jack.util.DrawUtil;
 			import com.jack.util.NumberUtil;
+			import com.jack.view.module.MapPanel;
+			import com.jack.view.module.ProjectConfigPanel;
 			import com.jack.vo.MapVO;
+			import com.jack.vo.ProjectVO;
 			
 			import mx.controls.Alert;
+			import mx.managers.PopUpManager;
+			
+			import spark.events.IndexChangeEvent;
 			
 			private var EMPTY_COLOR:uint = 0xffffff;
 			private var ITEM_COLOR:uint = 0x00ff00;
@@ -62,6 +71,9 @@
 				editPanel.addEventListener(MouseEvent.MOUSE_DOWN, onEditContainerMouseDown);			
 				addEventListener(MouseEvent.MOUSE_UP, onStageMouseUp);
 				addEventListener(Event.DEACTIVATE, onDeactivate);
+				
+				
+				EventController.e.addEventListener(EditorEvent.CREATE_PROJECT, onCreateProject);
 			}
 			
 			protected function onGenerateMap(event:MouseEvent):void
@@ -286,6 +298,57 @@
 				}			
 			}
 			
+			protected function onTopBarSelecteChange(event:IndexChangeEvent):void
+			{
+				trace("onTopBarSelecteChange", event.oldIndex, event.newIndex);			
+			}
+			
+			protected function onTopBarClick(event:MouseEvent):void
+			{
+			}
+			
+			protected function onNewProjectClick(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				
+				var newProjectConfigPanel:ProjectConfigPanel = new ProjectConfigPanel();
+				newProjectConfigPanel.x = (width-newProjectConfigPanel.width)/2;
+				newProjectConfigPanel.y = (height-newProjectConfigPanel.height)/2;
+				PopUpManager.addPopUp(newProjectConfigPanel, this, true);
+			}
+			
+			protected function onOpenProjectClick(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				
+			}
+			
+			protected function onSaveProjectClick(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				
+			}
+			
+			protected function onExportDataClick(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				
+			}
+			
+			protected function onCreateProject(event:EditorEvent):void
+			{
+				// TODO Auto-generated method stub
+				trace(event.params);
+				
+				var mapPanel:MapPanel = new MapPanel();
+				mapPanel.x = 15;
+				mapPanel.y = 65;
+				PopUpManager.addPopUp(mapPanel, this, true);
+				mapPanel.createNewProject(event.params as ProjectVO);
+			}
+			
+
+			
 		]]>
 	</fx:Script>
 	<s:VGroup id="itemSelectGroup" x="682" y="66" width="81" height="74">
@@ -304,28 +367,28 @@
 		<s:Label width="62" height="22" fontSize="20" text="height"/>
 		<s:TextInput id="itemTxt" width="42"/>
 		<s:TextInput id="toolTxt" width="39"/>
-		<s:DataGrid height="152" requestedRowCount="4">
-			<s:columns>
-				<s:ArrayList>
-					<s:GridColumn dataField="dataField1" headerText="Map"></s:GridColumn>
-				</s:ArrayList>
-			</s:columns>
-			<s:typicalItem>
-				<fx:Object dataField1="Sample Data" dataField2="Sample Data" dataField3="Sample Data"></fx:Object>
-			</s:typicalItem>
-			<s:ArrayList>
-				<fx:Object dataField1="data1" dataField2="data1" dataField3="data1"></fx:Object>
-				<fx:Object dataField1="data2" dataField2="data2" dataField3="data2"></fx:Object>
-				<fx:Object dataField1="data3" dataField2="data3" dataField3="data3"></fx:Object>
-				<fx:Object dataField1="data4" dataField2="data4" dataField3="data4"></fx:Object>
-			</s:ArrayList>
-		</s:DataGrid>
 	</s:VGroup>
 	<s:Button id="saveBtn" x="560" y="148" label="Save" click="onSaveMap(event)"/>
 	<mx:Canvas id="test" x="19" y="66" width="484" height="389">
 	</mx:Canvas>
 	<s:Button id="openMapBtn" x="560" y="196" label="Open" click="onOpenMap(event)"/>
-	<mx:MenuBar x="100" y="16" width="102" rollOverColor="#DCD8D8" selectionColor="#EFE0E0"
-				toolTip="Create new project"></mx:MenuBar>
+	
+	
+	<s:HGroup x="14" y="10" width="655" height="48" gap="0" verticalAlign="middle">
+		<s:Button id="newProjectBtn" width="136" height="34" label="New Project"
+				  click="onNewProjectClick(event)" fontFamily="Courier New"
+				  icon="assets/image 201.png" toolTip="Create a new project"/>
+		<s:Button id="openProjectBtn" width="136" height="34" label="Open Project"
+				  click="onOpenProjectClick(event)" fontFamily="Courier New"
+				  icon="assets/image 237.png" toolTip="Open a existing project"/>
+		<s:Button id="saveProjectBtn" width="136" height="34" label="Save Project"
+				  click="onSaveProjectClick(event)" fontFamily="Courier New"
+				  icon="assets/image 221.png" toolTip="Save current project"/>
+		<s:Button id="exportDataBtn" width="136" height="34" label="Export Data"
+				  click="onExportDataClick(event)" fontFamily="Courier New"
+				  icon="assets/image 194.png" toolTip="Export data"/>
+	</s:HGroup>
+		
+	
 	
 </s:WindowedApplication>

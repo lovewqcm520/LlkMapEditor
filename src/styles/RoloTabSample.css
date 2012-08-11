@@ -1,0 +1,66 @@
+/* CSS file */
+
+.tabNormal
+{
+  corner-radius: 13;
+  backgroundAlpha: 1.0;
+  alpha: 1.0;
+  horizontalGap: 0;
+  backgroundColor: #946E2F;
+  border-thickness: 1;
+  border-color: #4D2F13;
+  border-style: solid;
+  verticalAlign: middle;
+  horizontalAlign: left;
+  paddingLeft: 5;
+  paddingRight: 10;
+  horizontalScrollPolicy: off;
+  verticalScrollPolicy: off;
+  drop-shadow-enabled: false;
+  shadow-direction: left;
+  color: #FFFFFF;
+}
+
+.tabSelected
+{
+  corner-radius: 13;
+  backgroundAlpha: 1.0;
+  alpha: 1.0;
+  horizontalGap: 0;
+  border-thickness: 1;
+  border-style: solid;
+  verticalAlign: middle;
+  horizontalAlign: left;
+  paddingRight: 6;
+  horizontalScrollPolicy: off;
+  verticalScrollPolicy: off;
+  shadow-direction: left;
+
+  paddingLeft: 5;
+  border-color: #76818f;
+  backgroundColor: #FAFAFA;
+  drop-shadow-enabled: true;
+  fontWeight: bold;
+}    
+
+.tabHover
+{
+  corner-radius: 13;
+  backgroundAlpha: 1.0;
+  alpha: 1.0;
+  horizontalGap: 0;
+  border-thickness: 1;
+  border-color: #76818f;
+  border-style: solid;
+  verticalAlign: middle;
+  horizontalAlign: left;
+  paddingLeft: 5;
+  paddingRight: 10;
+  horizontalScrollPolicy: off;
+  verticalScrollPolicy: off;
+  drop-shadow-enabled: false;
+  shadow-direction: left;
+
+  backgroundColor: #ffe7a2;
+  color: #2f66a8;
+}    

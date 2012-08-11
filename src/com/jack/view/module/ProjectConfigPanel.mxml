@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="230" height="250" xmlns:view="com.jack.view.*" xmlns:component="com.jack.view.component.*">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.jack.control.events.EditorEvent;
+			import com.jack.control.events.EventController;
+			import com.jack.util.NumberUtil;
+			import com.jack.vo.ProjectVO;
+			
+			import mx.controls.Alert;
+
+			private var maps:int;
+			private var col:int;
+			private var row:int;
+			
+			protected function onCreateBtnClick(event:MouseEvent):void
+			{
+				maps = 	mapStepper.value;
+				col = 	colStepper.value;
+				row = 	rowStepper.value;
+				
+				if(maps <= 0)
+				{
+					Alert.show("Must set map number.", "Error");
+				}
+				else
+				{
+					if(col == 0 || row == 0 || !NumberUtil.isEven(col*row))
+					{
+						Alert.show("Map col multiply row must be a even number.", "Error");
+					}
+					else
+					{
+						var voProject:ProjectVO = new ProjectVO();
+						voProject.totalMaps = maps;
+						voProject.maxMapCol = col;
+						voProject.maxMapRow = row;
+						// dispatch the create project event
+						EventController.e.dispatchEvent(new EditorEvent(EditorEvent.CREATE_PROJECT, voProject));
+						// dispose this panel
+						if(this.parent)
+							this.parent.removeChild(this);
+					}
+				}
+			}
+			
+			protected function onCancelBtnClick(event:MouseEvent):void
+			{
+				if(this.parent)
+					this.parent.removeChild(this);
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:Panel x="0" y="0" width="230" height="250" title="New project" id="panel">
+		<component:MyNumericStepper id="mapStepper" x="116" y="41" maximum="999"/>
+		<s:Label x="51" y="47" text="total maps"/>
+		<component:MyNumericStepper id="colStepper" x="116" y="74" width="77" maximum="20"/>
+		<s:Label x="51" y="80" text="map col"/>
+		<component:MyNumericStepper id="rowStepper" x="116" y="107" width="77" maximum="20"/>
+		<s:Label x="50" y="113" text="map row"/>
+		<s:Button id="createBtn" x="29" y="157" label="Create" click="onCreateBtnClick(event)"/>
+		<s:Button id="cancelBtn" x="129" y="157" label="Cancel" click="onCancelBtnClick(event)"/>
+	</s:Panel>
+</s:Group>

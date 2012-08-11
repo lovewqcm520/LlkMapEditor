@@ -5,7 +5,7 @@ package com.jack.vo
 	
 	import de.polygonal.ds.Array2;
 
-	public class MapVO
+	public class MapVO extends Object
 	{
 		public var name:String;
 		public var level:int;
@@ -18,11 +18,16 @@ package com.jack.vo
 		private var ITEM_POKER:int = 1;
 		private var ITEM_TOOL:int = 2;
 		
-		private var map:Array2;
+		public var map:Array2;
 
 		public function MapVO()
 		{
 			
+		}
+		
+		public function toString():String
+		{
+			return name;
 		}
 		
 		public function setMapSize(w:int, h:int):void
@@ -68,6 +73,11 @@ package com.jack.vo
 			}
 			
 			var arr:Array=new Array(width*height);
+			for (var i2:int = 0; i2 < arr.length; i2++) 
+			{
+				arr[i2] = TAG_EMPTY;
+			}
+			
 			var k:int;
 			for (k = 0; k < nPoker; k++) 
 			{
@@ -109,10 +119,6 @@ package com.jack.vo
 		{
 			var str:String = exportToString();
 			
-			var xml:XML = 
-				<maps>
-				</maps>;
-			
 			var map:XML =
 				<map>
 				</map>;			
@@ -124,9 +130,7 @@ package com.jack.vo
 			map.appendChild(<realHeight>{realHeight}</realHeight>);
 			map.appendChild(<data>{str}</data>);
 			
-			xml.appendChild(map);
-			
-			return xml;
+			return map;
 		}
 		
 		public function importFromString(str:String):void

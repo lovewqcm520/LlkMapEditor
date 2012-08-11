@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="800" height="600">
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.jack.util.DrawUtil;
+			import com.jack.vo.MapVO;
+			import com.jack.vo.ProjectVO;
+			
+			import mx.collections.ArrayCollection;
+			
+			import spark.events.IndexChangeEvent;
+			
+			private var voProject:ProjectVO;
+			private var editPanel:Sprite;
+			private var map:MapVO;
+			
+			private var EMPTY_COLOR:uint = 0xffffff;
+			private var ITEM_COLOR:uint = 0x00ff00;
+			private var TAG_EMPTY:int = -1;
+			private var COL_DEFAULT:int = 8;
+			private var ROW_DEFAULT:int = 8;
+			private var ITEMS_DEFAULT:int = 8;
+			
+			public var mapCol:int;
+			public var mapRow:int;
+			private var nExistItems:int;
+			private var curColorSelected:uint = EMPTY_COLOR;
+			
+			public function createNewProject(voProject:ProjectVO):void
+			{
+				this.voProject = voProject;
+				
+				var totalMaps:int = voProject.totalMaps;
+				var maxMapCol:int = voProject.maxMapCol;
+				var maxMapRow:int = voProject.maxMapRow;
+				
+				var arr:Array = [];
+				var map:MapVO;
+				for (var i:int = 0; i < totalMaps; i++) 
+				{
+					map = new MapVO();
+					map.level = i+1;
+					map.name = "map " + (i+1);
+					map.setMapSize(maxMapCol, maxMapRow);
+					map.random(50, 4);
+					arr.push(map);
+				}
+				
+				mapList.dataProvider = new ArrayCollection(arr);
+			}
+			
+			public function initAllMaps():void
+			{
+				
+			}
+			
+			protected function mapList_changeHandler(event:IndexChangeEvent):void
+			{
+				map = mapList.selectedItem;
+				if(map)
+				{
+					trace(event.newIndex, map.name, map.level, map.exportAsXML());
+					mapCol = map.width;
+					mapRow = map.height;
+					
+					
+					editPanel = new Sprite();				
+					editPanel.graphics.beginFill(0xffffff, 1);
+					editPanel.graphics.drawRect(0, 0, 500, 500);
+					editPanel.graphics.endFill();
+					editPanel.x = 27;
+					editPanel.y = 70;
+					test.rawChildren.addChild(editPanel);
+					// init the default edit container
+					DrawUtil.initMapEditContainer(editPanel);
+					
+					
+					// add mouse event for map edit container
+					editPanel.addEventListener(MouseEvent.CLICK, onEditContainerClick);
+					editPanel.addEventListener(MouseEvent.MOUSE_DOWN, onEditContainerMouseDown);	
+				}
+			}
+			
+			protected function mapList_clickHandler(event:MouseEvent):void
+			{
+				
+			}
+			
+			protected function mapList_clearHandler(event:Event):void
+			{
+				// TODO Auto-generated method stub
+				
+			}
+			
+		
+			
+			protected function onEditContainerClick(event:MouseEvent):void
+			{
+				// draw map
+				colorTile(event.localX, event.localY);
+			}
+			
+			protected function onEditContainerMouseDown(event:MouseEvent):void
+			{
+				editPanel.addEventListener(MouseEvent.MOUSE_MOVE, onEditContainerMouseMove);
+				editPanel.addEventListener(MouseEvent.MOUSE_UP, onEditContainerMouseUp);
+				
+				// draw map
+				colorTile(event.localX, event.localY);
+			}
+			
+			protected function onEditContainerMouseUp(event:MouseEvent):void
+			{
+				editPanel.removeEventListener(MouseEvent.MOUSE_MOVE, onEditContainerMouseMove);
+				editPanel.removeEventListener(MouseEvent.MOUSE_UP, onEditContainerMouseUp);
+			}
+			
+			private function colorTile(mx:Number, my:Number):void
+			{
+				var i:int = (mx/editPanel.width)*mapCol;
+				var j:int = (my/editPanel.height)*mapRow;
+				i = (i >= mapCol) ? mapCol-1 : i;
+				j = (j >= mapRow) ? mapRow-1 : j;
+				colorTiles(i, j, curColorSelected);
+			}
+			
+			private function colorTiles(i:int, j:int, color:uint):void
+			{
+				if(map.getItem(i, j) == 1 && color != EMPTY_COLOR)
+				{
+					return;
+				}
+				if(map.getItem(i, j) == -1 && color == EMPTY_COLOR)
+				{
+					return;
+				}
+				// draw map
+				DrawUtil.colorTile(i, j, color);
+				// update the map data
+				if(color == EMPTY_COLOR)
+				{
+					map.updateItem(i, j, -1);
+					nExistItems--;
+				}
+				else
+				{
+					map.updateItem(i, j, 1);
+					nExistItems++;
+				}
+			}
+			
+			protected function onEditContainerMouseMove(event:MouseEvent):void
+			{
+				// draw map
+				colorTile(event.localX, event.localY);
+			}
+			
+			protected function onStageMouseUp(event:MouseEvent):void
+			{
+				if(editPanel.hasEventListener(MouseEvent.MOUSE_MOVE))
+					editPanel.removeEventListener(MouseEvent.MOUSE_MOVE, onEditContainerMouseMove);
+				if(editPanel.hasEventListener(MouseEvent.MOUSE_UP))
+					editPanel.removeEventListener(MouseEvent.MOUSE_UP, onEditContainerMouseUp);
+			}
+			
+			protected function onDeactivate(event:Event):void
+			{
+				if(editPanel.hasEventListener(MouseEvent.MOUSE_MOVE))
+					editPanel.removeEventListener(MouseEvent.MOUSE_MOVE, onEditContainerMouseMove);
+				if(editPanel.hasEventListener(MouseEvent.MOUSE_UP))
+					editPanel.removeEventListener(MouseEvent.MOUSE_UP, onEditContainerMouseUp);
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<s:List id="mapList" x="10" y="10" width="166" height="580" change="mapList_changeHandler(event)"
+			clear="mapList_clearHandler(event)" click="mapList_clickHandler(event)">
+	</s:List>
+
+	<mx:Canvas id="test" x="184" y="10" width="424" height="580">
+	</mx:Canvas>
+	
+</s:Group>
