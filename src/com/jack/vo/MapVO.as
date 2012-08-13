@@ -11,18 +11,46 @@ package com.jack.vo
 		public var level:int;
 		public var width:int;
 		public var height:int;
-		private var realWidth:int;
-		private var realHeight:int;
-
-		private var TAG_EMPTY:int = -1;
-		private var ITEM_POKER:int = 1;
-		private var ITEM_TOOL:int = 2;
 		
-		public var map:Array2;
+		public var numTotalItems:int;
+		public var numNormalItems:int;
+		public var numToolItems:int;
+		public var numStoneItems:int;
+		
+		private var actualWidth:int;
+		private var actualHeight:int;
+
+		public static var ITEM_EMPTY:int = -1;
+		public static var ITEM_NORMAL:int = 1;
+		public static var ITEM_TOOL:int = 2;
+		public static var ITEM_STONE:int = 3;
+		
+		private var map:Array2;
+
 
 		public function MapVO()
 		{
 			
+		}
+		
+		public function clone():MapVO
+		{
+			var m:MapVO = new MapVO();
+			m.name = this.name;
+			m.level = this.level;
+			m.numTotalItems = this.numTotalItems;
+			m.numToolItems = this.numToolItems;
+		    m.setMapSize(this.width, this.height);
+			
+			for (var x:int = 0; x < width; x++) 
+			{
+				for (var y:int = 0; y < height; y++) 
+				{
+					m.setItem(x, y, this.getItem(x, y));
+				}				
+			}	
+			
+			return m;
 		}
 		
 		public function toString():String
@@ -32,19 +60,22 @@ package com.jack.vo
 		
 		public function setMapSize(w:int, h:int):void
 		{
-			realWidth = w;
-			realHeight = h;
-			width = realWidth+2;
-			height = realHeight+2;
-			map = new Array2(width, height);
+			width = w;
+			height = h;
+			actualWidth = w+2;
+			actualHeight = h+2;
+			map = new Array2(actualWidth, actualHeight);
 			// default value was -1;
-			for (var i:int = 0; i < width; i++) 
+			for (var x:int = 0; x < actualWidth; x++) 
 			{
-				for (var j:int = 0; j < height; j++) 
+				for (var y:int = 0; y < actualHeight; y++) 
 				{
-					map.set(i, j, TAG_EMPTY);
+					map.set(x, y, ITEM_EMPTY);
 				}				
 			}		
+			
+			// update the items type collection
+			updateItemsCollection();
 		}
 		
 		public function getItem(x:int, y:int):int
@@ -57,61 +88,107 @@ package com.jack.vo
 			return -2;
 		}
 		
-		public function updateItem(x:int, y:int, value:int):void
+		public function setItem(x:int, y:int, value:int):void
 		{
 			if(x >=0 && x < width && y >= 0 && y < height)
 			{
 				map.set(x+1, y+1, value);
+				
+				// update the items type collection
+				updateItemsCollection();
 			}
 		}
 		
-		public function random(nPoker:int, nTool:int):void
+		public function random(totalItems:int, toolItems:int):void
 		{
-			if(!NumberUtil.isEven(nPoker) || !NumberUtil.isEven(nTool))
+			if(!NumberUtil.isEven(totalItems) || !NumberUtil.isEven(toolItems))
 			{
 				return;
 			}
+
+			numTotalItems = totalItems;
+			numToolItems = toolItems;
 			
-			var arr:Array=new Array(width*height);
-			for (var i2:int = 0; i2 < arr.length; i2++) 
-			{
-				arr[i2] = TAG_EMPTY;
-			}
-			
+			var arr:Array = new Array(width*height);			
+			var len:int = arr.length;
 			var k:int;
-			for (k = 0; k < nPoker; k++) 
+			for (k = 0; k < len; k++) 
 			{
-				arr[k] = ITEM_POKER;
-			}
-			for (k = nPoker; k < nPoker+nTool; k++) 
+				arr[k] = ITEM_EMPTY;
+			}			
+			for (k = 0; k < toolItems; k++) 
 			{
 				arr[k] = ITEM_TOOL;
 			}
+			for (k = toolItems; k < totalItems; k++) 
+			{
+				arr[k] = ITEM_NORMAL;
+			}
 			
-			// shuffle the items
+			// shuffle the array
 			ArrayUtil.shuffle(arr);
 			
-			for (var i:int = 0; i < width; i++) 
+			for (var x:int = 0; x < width; x++) 
 			{
-				for (var j:int = 0; j < height; j++) 
+				for (var y:int = 0; y < height; y++) 
 				{
-					map.set(i, j, arr[i*height+j]);
+					map.set(x+1, y+1, arr[x*height+y]);
 				}				
 			}			
+			
+			// update the items type collection
+			updateItemsCollection();
+		}
+		
+		private function updateItemsCollection():void
+		{
+			var index:int;
+			var normalItems:int=0;
+			var toolItems:int=0;
+			var stoneItems:int=0;
+			for (var x:int = 0; x < width; x++) 
+			{
+				for (var y:int = 0; y < height; y++) 
+				{
+					index = int(map.get(x, y));
+					switch(index)
+					{
+						case ITEM_NORMAL:
+						{
+							normalItems++;
+							break;
+						}
+						case ITEM_TOOL:
+						{
+							toolItems++;
+							break;
+						}
+						case ITEM_STONE:
+						{
+							stoneItems++;
+							break;
+						}
+					}
+				}				
+			}	
+			
+			numNormalItems = normalItems;
+			numToolItems = toolItems;
+			numStoneItems = stoneItems;
+			numTotalItems = numNormalItems + numToolItems + numStoneItems;
 		}
 		
 		public function exportToString():String
 		{
 			var str:String = "";
-			for (var i:int = 0; i < height; i++) 
+			for (var x:int = 0; x < actualHeight; x++) 
 			{
-				for (var j:int = 0; j < width; j++) 
+				for (var y:int = 0; y < actualWidth; y++) 
 				{
-					str += (String(map.get(j, i)) + ",");
+					str += (String(map.get(y, x)) + ",");
 				}			
 			}	
 			str = str.substring(0, str.length-1);
-			trace(str);
 			return str;
 		}
 		
@@ -126,47 +203,20 @@ package com.jack.vo
 			map.appendChild(<level>{level}</level>);
 			map.appendChild(<width>{width}</width>);
 			map.appendChild(<height>{height}</height>);
-			map.appendChild(<realWidth>{realWidth}</realWidth>);
-			map.appendChild(<realHeight>{realHeight}</realHeight>);
+			map.appendChild(<actualWidth>{actualWidth}</actualWidth>);
+			map.appendChild(<actualHeight>{actualHeight}</actualHeight>);
 			map.appendChild(<data>{str}</data>);
 			
 			return map;
 		}
 		
-		public function importFromString(str:String):void
+		public function importFromXML(xml:XML):void
 		{
-			var arr:Array = str.split("\n"); 
-			for (var k:int = 0; k < arr.length; k++) 
-			{
-				trace(arr[k]);
-			}
 			
-			// get the map dimension
-			var dimension:String = arr[0];
-			var w:int = int(dimension.substring(0, dimension.indexOf("x")));
-			var h:int = int(dimension.substring(dimension.indexOf("x")+1));
-			if(w <=0 || h <= 0)
-			{
-				return;
-			}
-			// get each position data
-			arr.shift();
-			var tmp:String = arr.join("");
-			arr = tmp.split(",");
 			
-			realWidth = w;
-			realHeight = h;
-			width = realWidth+2;
-			height = realHeight+2;
-			map = new Array2(width, height);
-			// default value was -1;
-			for (var i:int = 0; i < height; i++) 
-			{
-				for (var j:int = 0; j < width; j++) 
-				{
-					map.set(j, i, int(arr[i*width + j]));
-				}				
-			}		
+			
+			// update the items type collection
+			updateItemsCollection();
 		}
 
 	}

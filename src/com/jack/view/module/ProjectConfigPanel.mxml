@@ -38,6 +38,7 @@
 						voProject.totalMaps = maps;
 						voProject.maxMapCol = col;
 						voProject.maxMapRow = row;
+						voProject.isEmpty = emptyRadio.selected;
 						// dispatch the create project event
 						EventController.e.dispatchEvent(new EditorEvent(EditorEvent.CREATE_PROJECT, voProject));
 						// dispose this panel
@@ -57,16 +58,21 @@
 	</fx:Script>
 	
 	<fx:Declarations>
+		<s:RadioButtonGroup id="radiogroup"/>
 		<!-- Place non-visual elements (e.g., services, value objects) here -->
 	</fx:Declarations>
 	<s:Panel x="0" y="0" width="230" height="250" title="New project" id="panel">
-		<component:MyNumericStepper id="mapStepper" x="116" y="41" maximum="999"/>
-		<s:Label x="51" y="47" text="total maps"/>
-		<component:MyNumericStepper id="colStepper" x="116" y="74" width="77" maximum="20"/>
-		<s:Label x="51" y="80" text="map col"/>
-		<component:MyNumericStepper id="rowStepper" x="116" y="107" width="77" maximum="20"/>
-		<s:Label x="50" y="113" text="map row"/>
-		<s:Button id="createBtn" x="29" y="157" label="Create" click="onCreateBtnClick(event)"/>
-		<s:Button id="cancelBtn" x="129" y="157" label="Cancel" click="onCancelBtnClick(event)"/>
+		<component:MyNumericStepper id="mapStepper" x="114" y="32" maximum="999"/>
+		<s:Label x="49" y="38" text="total maps"/>
+		<component:MyNumericStepper id="colStepper" x="114" y="65" width="77" maximum="20"/>
+		<s:Label x="49" y="71" text="map col"/>
+		<component:MyNumericStepper id="rowStepper" x="114" y="98" width="77" maximum="20"/>
+		<s:Label x="48" y="104" text="map row"/>
+		<s:Button id="createBtn" x="29" y="181" label="Create" click="onCreateBtnClick(event)"/>
+		<s:Button id="cancelBtn" x="129" y="181" label="Cancel" click="onCancelBtnClick(event)"/>
+		<s:VGroup id="radio" x="49" y="128" horizontalAlign="left" verticalAlign="top">
+			<s:RadioButton id="emptyRadio" label="empty" groupName="radiogroup" selected="true"/>
+			<s:RadioButton id="randomRadio" label="random" groupName="radiogroup"/>
+		</s:VGroup>
 	</s:Panel>
 </s:Group>

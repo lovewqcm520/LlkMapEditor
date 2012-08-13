@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
 		 xmlns:s="library://ns.adobe.com/flex/spark" 
-		 xmlns:mx="library://ns.adobe.com/flex/mx" width="800" height="600">
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="678" height="350"
+		 xmlns:view="com.jack.view.*" xmlns:component="com.jack.view.component.*">
 	<fx:Declarations>
 		<!-- Place non-visual elements (e.g., services, value objects) here -->
 	</fx:Declarations>
@@ -9,10 +10,14 @@
 	<fx:Script>
 		<![CDATA[
 			import com.jack.util.DrawUtil;
+			import com.jack.util.GameUtil;
+			import com.jack.util.NumberUtil;
 			import com.jack.vo.MapVO;
 			import com.jack.vo.ProjectVO;
 			
 			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
 			
 			import spark.events.IndexChangeEvent;
 			
@@ -21,70 +26,110 @@
 			private var map:MapVO;
 			
 			private var EMPTY_COLOR:uint = 0xffffff;
-			private var ITEM_COLOR:uint = 0x00ff00;
-			private var TAG_EMPTY:int = -1;
-			private var COL_DEFAULT:int = 8;
-			private var ROW_DEFAULT:int = 8;
-			private var ITEMS_DEFAULT:int = 8;
+			private var ITEM_COLOR:uint = 0x338881;
 			
-			public var mapCol:int;
-			public var mapRow:int;
+			private var mapCol:int;
+			private var mapRow:int;
 			private var nExistItems:int;
 			private var curColorSelected:uint = EMPTY_COLOR;
+
+			private var previousOriginalMap:MapVO;
+			private var previousMapIndex:int;
 			
 			public function createNewProject(voProject:ProjectVO):void
 			{
 				this.voProject = voProject;
 				
-				var totalMaps:int = voProject.totalMaps;
-				var maxMapCol:int = voProject.maxMapCol;
-				var maxMapRow:int = voProject.maxMapRow;
+				var totalMaps:int = 	voProject.totalMaps;
+				var maxMapCol:int = 	voProject.maxMapCol;
+				var maxMapRow:int = 	voProject.maxMapRow;
+				var isEmpty:Boolean = 	voProject.isEmpty;
 				
 				var arr:Array = [];
-				var map:MapVO;
-				for (var i:int = 0; i < totalMaps; i++) 
+				var m:MapVO;
+				var i:int;
+							
+				for (i = 0; i < totalMaps; i++) 
 				{
-					map = new MapVO();
-					map.level = i+1;
-					map.name = "map " + (i+1);
-					map.setMapSize(maxMapCol, maxMapRow);
-					map.random(50, 4);
-					arr.push(map);
+					m = new MapVO();
+					m.level = i+1;
+					m.name = "map " + (i+1);
+					m.setMapSize(maxMapCol, maxMapRow);
+					if(!isEmpty)
+						m.random(20, 4);
+					arr.push(m);
 				}
 				
 				mapList.dataProvider = new ArrayCollection(arr);
-			}
-			
-			public function initAllMaps():void
-			{
 				
+				// auto select first one map
+				mapList.selectedIndex = 0;
+				// show the map
+				showMap();
 			}
 			
 			protected function mapList_changeHandler(event:IndexChangeEvent):void
 			{
-				map = mapList.selectedItem;
-				if(map)
+				previousMapIndex = event.oldIndex;
+				
+				showMap();
+			}
+			
+			private function showMap(index:int=-1):void
+			{
+				index = index == -1 ? mapList.selectedIndex : index;
+				
+				// if the previous activate map has been modified, ask user to save the change or ignore
+				if(map && previousOriginalMap && !GameUtil.isMapDataEqual(map, previousOriginalMap))
 				{
-					trace(event.newIndex, map.name, map.level, map.exportAsXML());
-					mapCol = map.width;
-					mapRow = map.height;
+					map = mapList.dataProvider.getItemAt(index) as MapVO;
 					
-					
-					editPanel = new Sprite();				
+					var text:String = previousOriginalMap.name + " has been modified, do you want save changes?";
+					var title:String = "Warning";
+					Alert.show(text, title, Alert.YES|Alert.NO, this, onSaveMapAlertCloseHandler);
+				}
+				else
+				{
+					map = mapList.dataProvider.getItemAt(index) as MapVO;
+					previousOriginalMap = map.clone();
+					drawNewMap();
+				}
+				
+				// update something
+				totalItemNumStepper.minimum = 0;
+				totalItemNumStepper.maximum = mapCol*mapRow;
+				totalItemNumStepper.value = map.numTotalItems;
+				
+				toolItemNumStepper.minimum = 0;
+				toolItemNumStepper.maximum = mapCol*mapRow;
+				toolItemNumStepper.value = map.numToolItems;
+				
+				trace("Show map which index was ", index);
+			}
+			
+			private function drawNewMap():void
+			{
+				mapCol = map.width;
+				mapRow = map.height;
+				
+				if(!editPanel)
+				{
+					editPanel = new Sprite();		
 					editPanel.graphics.beginFill(0xffffff, 1);
-					editPanel.graphics.drawRect(0, 0, 500, 500);
+					editPanel.graphics.drawRect(0, 0, 320, 320);
 					editPanel.graphics.endFill();
-					editPanel.x = 27;
-					editPanel.y = 70;
-					test.rawChildren.addChild(editPanel);
+					editPanel.x = 0;
+					editPanel.y = 0;
+					panel.rawChildren.addChild(editPanel);
 					// init the default edit container
 					DrawUtil.initMapEditContainer(editPanel);
-					
-					
 					// add mouse event for map edit container
 					editPanel.addEventListener(MouseEvent.CLICK, onEditContainerClick);
-					editPanel.addEventListener(MouseEvent.MOUSE_DOWN, onEditContainerMouseDown);	
+					editPanel.addEventListener(MouseEvent.MOUSE_DOWN, onEditContainerMouseDown);
 				}
+				
+				curColorSelected = ITEM_COLOR;
+				refreshMap();
 			}
 			
 			protected function mapList_clickHandler(event:MouseEvent):void
@@ -123,8 +168,8 @@
 			
 			private function colorTile(mx:Number, my:Number):void
 			{
-				var i:int = (mx/editPanel.width)*mapCol;
-				var j:int = (my/editPanel.height)*mapRow;
+				var i:int = int((mx/editPanel.width)*mapCol);
+				var j:int = int((my/editPanel.height)*mapRow);
 				i = (i >= mapCol) ? mapCol-1 : i;
 				j = (j >= mapRow) ? mapRow-1 : j;
 				colorTiles(i, j, curColorSelected);
@@ -145,12 +190,12 @@
 				// update the map data
 				if(color == EMPTY_COLOR)
 				{
-					map.updateItem(i, j, -1);
+					map.setItem(i, j, MapVO.ITEM_EMPTY);
 					nExistItems--;
 				}
 				else
 				{
-					map.updateItem(i, j, 1);
+					map.setItem(i, j, MapVO.ITEM_NORMAL);
 					nExistItems++;
 				}
 			}
@@ -177,14 +222,117 @@
 					editPanel.removeEventListener(MouseEvent.MOUSE_UP, onEditContainerMouseUp);
 			}
 			
+			// Refresh the whole map base on the map data.
+			private function refreshMap():void
+			{
+				// redraw the map gridding
+				DrawUtil.drawGridding(mapCol, mapRow);
+				
+				nExistItems = 0;
+				
+				// refresh the map gridding
+				for (var i:int = 0; i < mapCol; i++) 
+				{
+					for (var j:int = 0; j < mapRow; j++) 
+					{
+						var n:int = map.getItem(i, j);						
+						// update the map data
+						if(n < 0)
+						{
+							DrawUtil.colorTile(i, j, EMPTY_COLOR);
+							nExistItems--;
+						}
+						else
+						{
+							DrawUtil.colorTile(i, j, ITEM_COLOR);
+							nExistItems++;
+						}
+					}					
+				}			
+			}
+			
+			private function onSaveMapAlertCloseHandler(event:CloseEvent):void
+			{
+				switch(event.detail)
+				{
+					case Alert.NO:
+					{
+						// roll back to the old original map data
+						mapList.dataProvider.setItemAt(previousOriginalMap, previousMapIndex);
+						
+						// render the new map
+						previousOriginalMap = map.clone();
+						drawNewMap();
+						break;
+					}
+						
+					case Alert.YES:
+					{
+						// render the new map
+						previousOriginalMap = map.clone();
+						drawNewMap();
+						break;
+					}
+				}
+			}
+			
+			protected function randomBtn_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				
+			}
+			
+			protected function saveBtn_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				
+			}
+			
+			protected function editBtn_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				
+			}
+			
+			private function saveCurMap():void
+			{
+				var numTotalItems:int = totalItemNumStepper.value;
+				var numToolItems:int = toolItemNumStepper.value;
+				
+				// validate total items and tool items
+				if( numTotalItems == 0 ||
+					numTotalItems > mapCol*mapRow ||
+					!NumberUtil.isEven(numTotalItems) || 
+					!NumberUtil.isEven(numToolItems)
+					)
+				{
+					Alert.show("Normal items must set, Both normal items and tool items should be a even number and totally less that map size", "Error");
+					
+					return;
+				}
+				
+				// save map data
+			}
+			
 		]]>
 	</fx:Script>
 	
-	<s:List id="mapList" x="10" y="10" width="166" height="580" change="mapList_changeHandler(event)"
-			clear="mapList_clearHandler(event)" click="mapList_clickHandler(event)">
+	<s:List id="mapList" x="5" y="15" width="166" height="320" change="mapList_changeHandler(event)"
+			clear="mapList_clearHandler(event)" click="mapList_clickHandler(event)"
+			contentBackgroundColor="#10726F">
 	</s:List>
 
-	<mx:Canvas id="test" x="184" y="10" width="424" height="580">
+	<mx:Canvas id="panel" x="174" y="16" width="504" height="320" backgroundColor="#41827D">
+		<s:VGroup x="325" y="82" width="90" height="139" gap="10">
+			<s:Button id="editBtn" width="85" label="Edit" click="editBtn_clickHandler(event)"/>
+			<s:Button id="randomBtn" width="85" label="Random" click="randomBtn_clickHandler(event)"/>
+			<s:Button id="saveBtn" width="85" label="Save" click="saveBtn_clickHandler(event)"/>
+		</s:VGroup>
+		<s:Label x="325" y="52" text="tool item number"/>
+		<s:Label x="325" y="24" text="normal item number"/>
+		<component:MyNumericStepper id="totalItemNumStepper" x="439" y="17"/>
+		<component:MyNumericStepper id="toolItemNumStepper" x="439" y="45"/>
 	</mx:Canvas>
+	
 	
 </s:Group>

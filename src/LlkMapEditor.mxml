@@ -39,7 +39,6 @@
 			private var nExistItems:int;
 			private var curColorSelected:uint = EMPTY_COLOR;
 
-			private var editPanel:Sprite
 			private var map:MapVO; 
 
 			private var file:FileReference;
@@ -48,32 +47,15 @@
 			{
 				map = new MapVO();			
 				
-				editPanel = new Sprite();				
-				editPanel.graphics.beginFill(0xffffff, 1);
-				editPanel.graphics.drawRect(0, 0, 500, 500);
-				editPanel.graphics.endFill();
-				editPanel.x = 27;
-				editPanel.y = 70;
-				test.rawChildren.addChild(editPanel);
-				// init the default edit container
-				DrawUtil.initMapEditContainer(editPanel);
-				DrawUtil.drawGridding(COL_DEFAULT, ROW_DEFAULT);
-				mapCol=COL_DEFAULT;
-				mapRow=ROW_DEFAULT;
-				widthTxt.text = mapCol.toString();				
-				heightTxt.text = mapRow.toString();		
-				map.setMapSize(mapCol, mapRow);
 				// default selected item mode
 				itemRadio.selected = true;
 				curColorSelected = ITEM_COLOR;
-				// add mouse event for map edit container
-				editPanel.addEventListener(MouseEvent.CLICK, onEditContainerClick);
-				editPanel.addEventListener(MouseEvent.MOUSE_DOWN, onEditContainerMouseDown);			
-				addEventListener(MouseEvent.MOUSE_UP, onStageMouseUp);
-				addEventListener(Event.DEACTIVATE, onDeactivate);
 				
 				
 				EventController.e.addEventListener(EditorEvent.CREATE_PROJECT, onCreateProject);
+				
+				var dia:Sprite= DrawUtil.drawDiamond(100, 50);
+				test.rawChildren.addChild(dia);
 			}
 			
 			protected function onGenerateMap(event:MouseEvent):void
@@ -141,55 +123,19 @@
 						if(n < 0)
 						{
 							DrawUtil.colorTile(i, j, EMPTY_COLOR);
-							map.updateItem(i, j, -1);
+							map.setItem(i, j, -1);
 							nExistItems--;
 						}
 						else
 						{
 							DrawUtil.colorTile(i, j, ITEM_COLOR);
-							map.updateItem(i, j, 1);
+							map.setItem(i, j, 1);
 							nExistItems++;
 						}
 					}					
 				}				
 			}
-			
-			protected function onEditContainerClick(event:MouseEvent):void
-			{
-				// draw map
-				colorTile(event.localX, event.localY);
-			}
-			
-			protected function onEditContainerMouseDown(event:MouseEvent):void
-			{
-				editPanel.addEventListener(MouseEvent.MOUSE_MOVE, onEditContainerMouseMove);
-				editPanel.addEventListener(MouseEvent.MOUSE_UP, onEditContainerMouseUp);
-				
-				// draw map
-				colorTile(event.localX, event.localY);
-			}
-			
-			protected function onEditContainerMouseUp(event:MouseEvent):void
-			{
-				editPanel.removeEventListener(MouseEvent.MOUSE_MOVE, onEditContainerMouseMove);
-				editPanel.removeEventListener(MouseEvent.MOUSE_UP, onEditContainerMouseUp);
-			}
-			
-			protected function onEditContainerMouseMove(event:MouseEvent):void
-			{
-				// draw map
-				colorTile(event.localX, event.localY);
-			}
-			
-			private function colorTile(mx:Number, my:Number):void
-			{
-				var i:int = (mx/editPanel.width)*mapCol;
-				var j:int = (my/editPanel.height)*mapRow;
-				i = (i >= mapCol) ? mapCol-1 : i;
-				j = (j >= mapRow) ? mapRow-1 : j;
-				colorTiles(i, j, curColorSelected);
-			}
-			
+
 			private function colorTiles(i:int, j:int, color:uint):void
 			{
 				if(map.getItem(i, j) == 1 && color != EMPTY_COLOR)
@@ -205,31 +151,16 @@
 				// update the map data
 				if(color == EMPTY_COLOR)
 				{
-					map.updateItem(i, j, -1);
+					map.setItem(i, j, -1);
 					nExistItems--;
 				}
 				else
 				{
-					map.updateItem(i, j, 1);
+					map.setItem(i, j, 1);
 					nExistItems++;
 				}
 			}
-			
-			protected function onStageMouseUp(event:MouseEvent):void
-			{
-				if(editPanel.hasEventListener(MouseEvent.MOUSE_MOVE))
-					editPanel.removeEventListener(MouseEvent.MOUSE_MOVE, onEditContainerMouseMove);
-				if(editPanel.hasEventListener(MouseEvent.MOUSE_UP))
-					editPanel.removeEventListener(MouseEvent.MOUSE_UP, onEditContainerMouseUp);
-			}
-			
-			protected function onDeactivate(event:Event):void
-			{
-				if(editPanel.hasEventListener(MouseEvent.MOUSE_MOVE))
-					editPanel.removeEventListener(MouseEvent.MOUSE_MOVE, onEditContainerMouseMove);
-				if(editPanel.hasEventListener(MouseEvent.MOUSE_UP))
-					editPanel.removeEventListener(MouseEvent.MOUSE_UP, onEditContainerMouseUp);
-			}
+		
 			
 			protected function onOpenMap(event:MouseEvent):void
 			{
@@ -261,42 +192,9 @@
 				var mapStr:String = bytearray.readUTFBytes(bytearray.length);
 				
 				// update the map
-				map.importFromString(mapStr);
-				refreshMap();
+				//refreshMap();
 			}
 			
-			// Refresh the whole map base on the map data.
-			private function refreshMap():void
-			{
-				// redraw the map gridding
-				mapCol = map.width;
-				mapRow = map.height;
-				DrawUtil.drawGridding(mapCol, mapRow);
-				
-				nExistItems = 0;
-				
-				// refresh the map gridding
-				for (var i:int = 0; i < mapCol; i++) 
-				{
-					for (var j:int = 0; j < mapRow; j++) 
-					{
-						var n:int = map.getItem(i, j);						
-						// update the map data
-						if(n < 0)
-						{
-							DrawUtil.colorTile(i, j, EMPTY_COLOR);
-							map.updateItem(i, j, -1);
-							nExistItems--;
-						}
-						else
-						{
-							DrawUtil.colorTile(i, j, ITEM_COLOR);
-							map.updateItem(i, j, 1);
-							nExistItems++;
-						}
-					}					
-				}			
-			}
 			
 			protected function onTopBarSelecteChange(event:IndexChangeEvent):void
 			{

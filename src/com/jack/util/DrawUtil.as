@@ -42,7 +42,7 @@ package com.jack.util
 			var graphics:Graphics = mapContainer.graphics;
 			graphics.clear();
 			graphics.beginFill(0xffffff, 1);
-			graphics.drawRect(0, 0, 500, 500);
+			graphics.drawRect(0, 0, w, h);
 			graphics.lineStyle(1, 0x000000, 2);
 		
 			// draw big  rect border  first
@@ -84,6 +84,29 @@ package com.jack.util
 			graphics.lineTo(sw, sh);
 			// finish the graphic render
 			graphics.endFill();
+		}
+		
+		/**
+		 * 画一个 diamond 菱形
+		 * @param        uint
+		 * @param        uint
+		 * @return
+		 */
+		public static function drawDiamond(diamondWidth:int,diamondHeight:int):Sprite
+		{        
+			var diamond:Sprite = new Sprite();
+			
+			diamond.graphics.lineStyle(1, 0xffffff, 1);
+			diamond.graphics.beginFill(0xCCCCCC, 0.3);
+			diamond.graphics.moveTo(diamondHeight, 0);
+			diamond.graphics.lineTo(diamondWidth, diamondHeight/2);
+			diamond.graphics.lineTo(diamondHeight, diamondHeight);
+			diamond.graphics.lineTo(0, diamondHeight/2);
+			diamond.graphics.lineTo(diamondHeight, 0);
+			diamond.graphics.endFill();
+			
+			
+			return diamond;                                
 		}
 		
 		

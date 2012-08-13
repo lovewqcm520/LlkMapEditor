@@ -5,6 +5,7 @@ package com.jack.vo
 		public var totalMaps:int;
 		public var maxMapCol:int;
 		public var maxMapRow:int;
+		public var isEmpty:Boolean;
 		
 		public function ProjectVO()
 		{
