@@ -99,15 +99,16 @@ package com.jack.vo
 			}
 		}
 		
-		public function random(totalItems:int, toolItems:int):void
+		public function random(totalItems:int, toolItems:int, stoneItems:int):void
 		{
-			if(!NumberUtil.isEven(totalItems) || !NumberUtil.isEven(toolItems))
+			if(!NumberUtil.isEven(totalItems) || !NumberUtil.isEven(toolItems) || !NumberUtil.isEven(stoneItems))
 			{
 				return;
 			}
 
 			numTotalItems = totalItems;
 			numToolItems = toolItems;
+			numStoneItems = stoneItems;
 			
 			var arr:Array = new Array(width*height);			
 			var len:int = arr.length;
@@ -120,7 +121,11 @@ package com.jack.vo
 			{
 				arr[k] = ITEM_TOOL;
 			}
-			for (k = toolItems; k < totalItems; k++) 
+			for (k = toolItems; k < toolItems+stoneItems; k++) 
+			{
+				arr[k] = ITEM_STONE;
+			}
+			for (k = toolItems+stoneItems; k < totalItems; k++) 
 			{
 				arr[k] = ITEM_NORMAL;
 			}
@@ -143,6 +148,7 @@ package com.jack.vo
 		private function updateItemsCollection():void
 		{
 			var index:int;
+			var totalItems:int=0;
 			var normalItems:int=0;
 			var toolItems:int=0;
 			var stoneItems:int=0;
@@ -150,7 +156,9 @@ package com.jack.vo
 			{
 				for (var y:int = 0; y < height; y++) 
 				{
-					index = int(map.get(x, y));
+					index = int(map.get(x+1, y+1));
+					if(index != ITEM_EMPTY)
+						totalItems++;
 					switch(index)
 					{
 						case ITEM_NORMAL:
@@ -172,10 +180,7 @@ package com.jack.vo
 				}				
 			}	
 			
-			numNormalItems = normalItems;
-			numToolItems = toolItems;
-			numStoneItems = stoneItems;
-			numTotalItems = numNormalItems + numToolItems + numStoneItems;
+			numTotalItems = totalItems;
 		}
 		
 		public function exportToString():String

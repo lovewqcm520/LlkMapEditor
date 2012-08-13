@@ -56,7 +56,7 @@
 					m.name = "map " + (i+1);
 					m.setMapSize(maxMapCol, maxMapRow);
 					if(!isEmpty)
-						m.random(20, 4);
+						m.random(30, 4, 2);
 					arr.push(m);
 				}
 				
@@ -66,6 +66,14 @@
 				mapList.selectedIndex = 0;
 				// show the map
 				showMap();
+			}
+			
+			public function disableEditContainerMouse():void
+			{
+				if(editPanel.hasEventListener(MouseEvent.MOUSE_MOVE))
+					editPanel.removeEventListener(MouseEvent.MOUSE_MOVE, onEditContainerMouseMove);
+				if(editPanel.hasEventListener(MouseEvent.MOUSE_UP))
+					editPanel.removeEventListener(MouseEvent.MOUSE_UP, onEditContainerMouseUp);
 			}
 			
 			protected function mapList_changeHandler(event:IndexChangeEvent):void
@@ -104,6 +112,10 @@
 				toolItemNumStepper.maximum = mapCol*mapRow;
 				toolItemNumStepper.value = map.numToolItems;
 				
+				stoneItemNumStepper.minimum = 0;
+				stoneItemNumStepper.maximum = mapCol*mapRow;
+				stoneItemNumStepper.value = map.numStoneItems;
+				
 				trace("Show map which index was ", index);
 			}
 			
@@ -126,9 +138,11 @@
 					// add mouse event for map edit container
 					editPanel.addEventListener(MouseEvent.CLICK, onEditContainerClick);
 					editPanel.addEventListener(MouseEvent.MOUSE_DOWN, onEditContainerMouseDown);
+					addEventListener(MouseEvent.MOUSE_UP, onStageMouseUp);
+					addEventListener(Event.DEACTIVATE, onDeactivate);
 				}
 				
-				curColorSelected = ITEM_COLOR;
+				curColorSelected = itemRadio.selected ? ITEM_COLOR : EMPTY_COLOR;
 				refreshMap();
 			}
 			
@@ -168,6 +182,8 @@
 			
 			private function colorTile(mx:Number, my:Number):void
 			{
+				curColorSelected = itemRadio.selected ? ITEM_COLOR : EMPTY_COLOR;
+				
 				var i:int = int((mx/editPanel.width)*mapCol);
 				var j:int = int((my/editPanel.height)*mapRow);
 				i = (i >= mapCol) ? mapCol-1 : i;
@@ -198,6 +214,9 @@
 					map.setItem(i, j, MapVO.ITEM_NORMAL);
 					nExistItems++;
 				}
+				
+				// update the item num
+				totalItemNumStepper.value = map.numTotalItems;
 			}
 			
 			protected function onEditContainerMouseMove(event:MouseEvent):void
@@ -208,18 +227,12 @@
 			
 			protected function onStageMouseUp(event:MouseEvent):void
 			{
-				if(editPanel.hasEventListener(MouseEvent.MOUSE_MOVE))
-					editPanel.removeEventListener(MouseEvent.MOUSE_MOVE, onEditContainerMouseMove);
-				if(editPanel.hasEventListener(MouseEvent.MOUSE_UP))
-					editPanel.removeEventListener(MouseEvent.MOUSE_UP, onEditContainerMouseUp);
+				disableEditContainerMouse();
 			}
 			
 			protected function onDeactivate(event:Event):void
 			{
-				if(editPanel.hasEventListener(MouseEvent.MOUSE_MOVE))
-					editPanel.removeEventListener(MouseEvent.MOUSE_MOVE, onEditContainerMouseMove);
-				if(editPanel.hasEventListener(MouseEvent.MOUSE_UP))
-					editPanel.removeEventListener(MouseEvent.MOUSE_UP, onEditContainerMouseUp);
+				disableEditContainerMouse();
 			}
 			
 			// Refresh the whole map base on the map data.
@@ -323,7 +336,7 @@
 	</s:List>
 
 	<mx:Canvas id="panel" x="174" y="16" width="504" height="320" backgroundColor="#41827D">
-		<s:VGroup x="325" y="82" width="90" height="139" gap="10">
+		<s:VGroup x="325" y="159" width="90" height="139" gap="10">
 			<s:Button id="editBtn" width="85" label="Edit" click="editBtn_clickHandler(event)"/>
 			<s:Button id="randomBtn" width="85" label="Random" click="randomBtn_clickHandler(event)"/>
 			<s:Button id="saveBtn" width="85" label="Save" click="saveBtn_clickHandler(event)"/>
@@ -332,6 +345,14 @@
 		<s:Label x="325" y="24" text="normal item number"/>
 		<component:MyNumericStepper id="totalItemNumStepper" x="439" y="17"/>
 		<component:MyNumericStepper id="toolItemNumStepper" x="439" y="45"/>
+		<s:Label x="325" y="81" text="stone item number"/>
+		<s:Label x="325" y="121" text="Choose a item type"/>
+		<component:MyNumericStepper id="stoneItemNumStepper" x="439" y="74"/>
+		<s:RadioButtonGroup id="radiogroup1"/>
+		<s:VGroup x="437" y="108" width="57">
+			<s:RadioButton id="emptyRadio" label="Empty" groupName="radiogroup1"/>
+			<s:RadioButton id="itemRadio" label="Item" groupName="radiogroup1" selected="true"/>
+		</s:VGroup>
 	</mx:Canvas>
 	
 	

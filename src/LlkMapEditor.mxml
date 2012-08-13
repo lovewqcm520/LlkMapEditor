@@ -42,6 +42,8 @@
 			private var map:MapVO; 
 
 			private var file:FileReference;
+
+			private var mapPanel:MapPanel;
 			
 			public function init():void
 			{
@@ -54,8 +56,24 @@
 				
 				EventController.e.addEventListener(EditorEvent.CREATE_PROJECT, onCreateProject);
 				
-				var dia:Sprite= DrawUtil.drawDiamond(100, 50);
-				test.rawChildren.addChild(dia);
+				addEventListener(MouseEvent.MOUSE_UP, onStageMouseUp);
+				addEventListener(Event.DEACTIVATE, onDeactivate);
+			}
+			
+			protected function onStageMouseUp(event:MouseEvent):void
+			{
+				if(mapPanel)
+				{
+					mapPanel.disableEditContainerMouse();
+				}
+			}
+			
+			protected function onDeactivate(event:Event):void
+			{
+				if(mapPanel)
+				{
+					mapPanel.disableEditContainerMouse();
+				}
 			}
 			
 			protected function onGenerateMap(event:MouseEvent):void
@@ -109,7 +127,7 @@
 			
 			protected function onRandomGenerateMap(event:MouseEvent):void
 			{
-				map.random(0, 0);
+				//map.random(0, 0);
 				nExistItems = 0;
 				
 				for (var i:int = 0; i < mapCol; i++) 
@@ -238,7 +256,7 @@
 				// TODO Auto-generated method stub
 				trace(event.params);
 				
-				var mapPanel:MapPanel = new MapPanel();
+				mapPanel = new MapPanel();
 				mapPanel.x = 15;
 				mapPanel.y = 65;
 				PopUpManager.addPopUp(mapPanel, this, true);
