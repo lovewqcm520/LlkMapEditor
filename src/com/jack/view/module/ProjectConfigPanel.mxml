@@ -8,6 +8,7 @@
 			import com.jack.control.events.EditorEvent;
 			import com.jack.control.events.EventController;
 			import com.jack.util.NumberUtil;
+			import com.jack.util.StringUtil;
 			import com.jack.vo.ProjectVO;
 			
 			import mx.controls.Alert;
@@ -35,6 +36,8 @@
 					else
 					{
 						var voProject:ProjectVO = new ProjectVO();
+						voProject.name = StringUtil.trim(projectNameTxt.text);
+						voProject.name = voProject.name ? voProject.name : "MapProject";
 						voProject.totalMaps = maps;
 						voProject.maxMapCol = col;
 						voProject.maxMapRow = row;
@@ -64,6 +67,7 @@
 	<s:Panel x="0" y="0" width="230" height="250" title="New project" id="panel">
 		<component:MyNumericStepper id="mapStepper" x="114" y="32" maximum="999"/>
 		<s:Label x="49" y="38" text="total maps"/>
+		<s:Label x="17" y="10" text="project name"/>
 		<component:MyNumericStepper id="colStepper" x="114" y="65" width="77" maximum="20"/>
 		<s:Label x="49" y="71" text="map col"/>
 		<component:MyNumericStepper id="rowStepper" x="114" y="98" width="77" maximum="20"/>
@@ -74,5 +78,6 @@
 			<s:RadioButton id="emptyRadio" label="empty" groupName="radiogroup" selected="true"/>
 			<s:RadioButton id="randomRadio" label="random" groupName="radiogroup"/>
 		</s:VGroup>
+		<s:TextInput id="projectNameTxt" x="97" y="5"/>
 	</s:Panel>
 </s:Group>

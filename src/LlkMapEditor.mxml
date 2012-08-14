@@ -3,7 +3,7 @@
 					   xmlns:s="library://ns.adobe.com/flex/spark"
 					   xmlns:mx="library://ns.adobe.com/flex/mx"
 					   creationComplete="init()"
-					   width="860" height="700">
+					   width="800" height="600">
 	<fx:Style source="LlkMapEditor.css"/>
 	<fx:Declarations>
 		<s:RadioButtonGroup id="tileRadioGroup"/>
@@ -15,17 +15,14 @@
 			import com.jack.control.events.EditorEvent;
 			import com.jack.control.events.EventController;
 			import com.jack.util.Delay;
-			import com.jack.util.DrawUtil;
-			import com.jack.util.NumberUtil;
 			import com.jack.view.module.MapPanel;
 			import com.jack.view.module.ProjectConfigPanel;
 			import com.jack.vo.MapVO;
 			import com.jack.vo.ProjectVO;
 			
 			import mx.controls.Alert;
+			import mx.events.CloseEvent;
 			import mx.managers.PopUpManager;
-			
-			import spark.events.IndexChangeEvent;
 			
 			private var EMPTY_COLOR:uint = 0xffffff;
 			private var ITEM_COLOR:uint = 0x00ff00;
@@ -48,10 +45,6 @@
 			public function init():void
 			{
 				map = new MapVO();			
-				
-				// default selected item mode
-				itemRadio.selected = true;
-				curColorSelected = ITEM_COLOR;
 				
 				
 				EventController.e.addEventListener(EditorEvent.CREATE_PROJECT, onCreateProject);
@@ -76,115 +69,147 @@
 				}
 			}
 			
-			protected function onGenerateMap(event:MouseEvent):void
+			private function loadProjectFile():void
 			{
-				var w:int = int(widthTxt.text);
-				var h:int = int(heightTxt.text);
+				file.load();
+			}
+			
+			private function onProjectFileLoaded(e:Event):void
+			{
+				file=e.target as FileReference;
+				file.removeEventListener(Event.COMPLETE, onProjectFileLoaded);
+				var b:ByteArray=file.data;
+				var str:String = b.readUTFBytes(b.length);
+				var xml:XML = new XML(str);
 				
-				// can not be odd
-				if(w >0 && h > 0 && 
-					((w*h)&1) == 0)
+				if(!mapPanel)
 				{
-					mapCol = w;
-					mapRow = h;
-					DrawUtil.drawGridding(w, h);
-					map.setMapSize(mapCol, mapRow);
+					mapPanel = new MapPanel();
+					mapPanel.x = 14;
+					mapPanel.y = 65;
+					PopUpManager.addPopUp(mapPanel, this, false);
 				}
-			}
-			
-			protected function onEmptyItemRadioSelected(event:MouseEvent):void
-			{
-				curColorSelected = EMPTY_COLOR;
-			}
-			
-			protected function onPokerRadioSelected(event:MouseEvent):void
-			{
-				curColorSelected = ITEM_COLOR;
-			}
-			
-			protected function onToolRadioSelected(event:MouseEvent):void
-			{
-				curColorSelected = ITEM_COLOR;
-			}
-			
-			protected function onSaveMap(event:MouseEvent):void
-			{
-				if(nExistItems == 0 || !NumberUtil.isEven(nExistItems))
-				{
-					Alert.show("Items must be even number!", "Error!",4, test);
-					return;
-				}
-				var xml:XML = map.exportAsXML();
-				var file:FileReference = new FileReference();
-				file.save(xml, "map.xml");
-			}
-			
-			protected function onClearMap(event:MouseEvent):void
-			{
-				DrawUtil.clear();
-				nExistItems = 0;
-			}
-			
-			protected function onRandomGenerateMap(event:MouseEvent):void
-			{
-				//map.random(0, 0);
-				nExistItems = 0;
 				
-				for (var i:int = 0; i < mapCol; i++) 
-				{
-					for (var j:int = 0; j < mapRow; j++) 
-					{
-						var n:int = map.getItem(i, j);
-						// draw map
-						
-						// update the map data
-						if(n < 0)
-						{
-							DrawUtil.colorTile(i, j, EMPTY_COLOR);
-							map.setItem(i, j, -1);
-							nExistItems--;
-						}
-						else
-						{
-							DrawUtil.colorTile(i, j, ITEM_COLOR);
-							map.setItem(i, j, 1);
-							nExistItems++;
-						}
-					}					
-				}				
-			}
-
-			private function colorTiles(i:int, j:int, color:uint):void
+				mapPanel.importExistingProject(xml);
+			}		
+			
+			protected function onNewProjectClick(event:MouseEvent):void
 			{
-				if(map.getItem(i, j) == 1 && color != EMPTY_COLOR)
+				if(mapPanel)
 				{
-					return;
-				}
-				if(map.getItem(i, j) == -1 && color == EMPTY_COLOR)
-				{
-					return;
-				}
-				// draw map
-				DrawUtil.colorTile(i, j, color);
-				// update the map data
-				if(color == EMPTY_COLOR)
-				{
-					map.setItem(i, j, -1);
-					nExistItems--;
+					// notice user save the current project
+					// show alert
+					var text:String = "Do you want save current project?";
+					var title:String = "Warning";
+					Alert.show(text, title, Alert.YES|Alert.NO, this, onSaveCurProjectAlertCloseHandler);
 				}
 				else
 				{
-					map.setItem(i, j, 1);
-					nExistItems++;
+					var newProjectConfigPanel:ProjectConfigPanel = new ProjectConfigPanel();
+					newProjectConfigPanel.x = (width-newProjectConfigPanel.width)/2;
+					newProjectConfigPanel.y = (height-newProjectConfigPanel.height)/2;
+					PopUpManager.addPopUp(newProjectConfigPanel, this, true);
 				}
 			}
-		
 			
-			protected function onOpenMap(event:MouseEvent):void
+			protected function onOpenProjectClick(event:MouseEvent):void
 			{
-				var file:FileReference = new FileReference();
+				if(mapPanel)
+				{
+					// notice user save the current project
+					// show alert
+					var text:String = "Do you want save current project?";
+					var title:String = "Warning";
+					Alert.show(text, title, Alert.YES|Alert.NO, this, onSaveCurProjectAlertCloseHandler1);
+				}
+				else
+				{
+					file = new FileReference();
+					file.addEventListener(Event.SELECT, onFileSelected);
+					var swfTypeFilter:FileFilter=new FileFilter("llk Files", "*.llk;");
+					file.browse([swfTypeFilter]);
+				}
+			}
+			
+			protected function onSaveProjectClick(event:MouseEvent=null):void
+			{
+				if(mapPanel)
+				{
+					mapPanel.saveProject();
+				}
+			}
+			
+			protected function onExportDataClick(event:MouseEvent):void
+			{
+				if(mapPanel)
+				{
+					mapPanel.exportProjectData();
+				}
+			}
+			
+			protected function onCreateProject(event:EditorEvent):void
+			{
+				// dispose old porject
+				if(mapPanel)
+				{
+					PopUpManager.removePopUp(mapPanel);
+					if(mapPanel.parent)
+					{
+						mapPanel.parent.removeChild(mapPanel);
+						mapPanel.dispose();
+						mapPanel = null;
+					}
+				}
+				// create new project
+				mapPanel = new MapPanel();
+				mapPanel.x = 14;
+				mapPanel.y = 65;
+				PopUpManager.addPopUp(mapPanel, this, false);
+				mapPanel.createNewProject(event.params as ProjectVO);
+			}
+			
+			private function onSaveCurProjectAlertCloseHandler(event:CloseEvent):void
+			{
+				switch(event.detail)
+				{
+					case Alert.NO:
+					{
+						break;
+					}
+						
+					case Alert.YES:
+					{
+						onSaveProjectClick(null);
+						break;
+					}
+				}
+				
+				// show the project config panel
+				var newProjectConfigPanel:ProjectConfigPanel = new ProjectConfigPanel();
+				newProjectConfigPanel.x = (width-newProjectConfigPanel.width)/2;
+				newProjectConfigPanel.y = (height-newProjectConfigPanel.height)/2;
+				PopUpManager.addPopUp(newProjectConfigPanel, this, true);
+			}
+			
+			private function onSaveCurProjectAlertCloseHandler1(event:CloseEvent):void
+			{
+				switch(event.detail)
+				{
+					case Alert.NO:
+					{
+						break;
+					}
+						
+					case Alert.YES:
+					{
+						onSaveProjectClick(null);
+						break;
+					}
+				}
+				
+				file = new FileReference();
 				file.addEventListener(Event.SELECT, onFileSelected);
-				var swfTypeFilter:FileFilter=new FileFilter("txt Files", "*.txt;");
+				var swfTypeFilter:FileFilter=new FileFilter("llk Files", "*.llk;");
 				file.browse([swfTypeFilter]);
 			}
 			
@@ -192,102 +217,15 @@
 			{
 				file = event.currentTarget as FileReference;
 				//content.picTxt.text=fileReference.name;
-				file.addEventListener(Event.COMPLETE, onFileLoaded);
+				file.addEventListener(Event.COMPLETE, onProjectFileLoaded);
 				
-				Delay.doIt(10, loadMapFile)
+				Delay.doIt(10, loadProjectFile)
 			}
-			
-			private function loadMapFile():void
-			{
-				file.load();
-			}
-			
-			private function onFileLoaded(e:Event):void
-			{
-				var file:FileReference=e.target as FileReference;
-				file.removeEventListener(Event.COMPLETE, onFileLoaded);
-				var bytearray:ByteArray=file.data;
-				var mapStr:String = bytearray.readUTFBytes(bytearray.length);
-				
-				// update the map
-				//refreshMap();
-			}
-			
-			
-			protected function onTopBarSelecteChange(event:IndexChangeEvent):void
-			{
-				trace("onTopBarSelecteChange", event.oldIndex, event.newIndex);			
-			}
-			
-			protected function onTopBarClick(event:MouseEvent):void
-			{
-			}
-			
-			protected function onNewProjectClick(event:MouseEvent):void
-			{
-				// TODO Auto-generated method stub
-				
-				var newProjectConfigPanel:ProjectConfigPanel = new ProjectConfigPanel();
-				newProjectConfigPanel.x = (width-newProjectConfigPanel.width)/2;
-				newProjectConfigPanel.y = (height-newProjectConfigPanel.height)/2;
-				PopUpManager.addPopUp(newProjectConfigPanel, this, true);
-			}
-			
-			protected function onOpenProjectClick(event:MouseEvent):void
-			{
-				// TODO Auto-generated method stub
-				
-			}
-			
-			protected function onSaveProjectClick(event:MouseEvent):void
-			{
-				// TODO Auto-generated method stub
-				
-			}
-			
-			protected function onExportDataClick(event:MouseEvent):void
-			{
-				// TODO Auto-generated method stub
-				
-			}
-			
-			protected function onCreateProject(event:EditorEvent):void
-			{
-				// TODO Auto-generated method stub
-				trace(event.params);
-				
-				mapPanel = new MapPanel();
-				mapPanel.x = 15;
-				mapPanel.y = 65;
-				PopUpManager.addPopUp(mapPanel, this, true);
-				mapPanel.createNewProject(event.params as ProjectVO);
-			}
-			
-
 			
 		]]>
 	</fx:Script>
 	<s:VGroup id="itemSelectGroup" x="682" y="66" width="81" height="74">
-		<s:TextInput id="widthTxt" width="81"/>
-		<s:TextInput id="heightTxt" width="81"/>
-		<s:Button id="generateBtn" label="generate" click="onGenerateMap(event)"/>
-		<s:RadioButton id="emptyItemRadio" label="empty" click="onEmptyItemRadioSelected(event)"
-					   groupName="tileRadioGroup"/>
-		<s:RadioButton id="itemRadio" width="67" height="17" label="poker" click="onPokerRadioSelected(event)"
-					   groupName="tileRadioGroup"/>
-		<s:RadioButton id="toolRadio" width="67" height="17" label="tool" click="onToolRadioSelected(event)"
-					   groupName="tileRadioGroup"/>
-		<s:Button id="clearBtn" label="clear" click="onClearMap(event)"/>
-		<s:Button id="randomBtn" label="random" click="onRandomGenerateMap(event)"/>
-		<s:Label width="62" height="22" fontSize="20" text="width"/>
-		<s:Label width="62" height="22" fontSize="20" text="height"/>
-		<s:TextInput id="itemTxt" width="42"/>
-		<s:TextInput id="toolTxt" width="39"/>
 	</s:VGroup>
-	<s:Button id="saveBtn" x="560" y="148" label="Save" click="onSaveMap(event)"/>
-	<mx:Canvas id="test" x="19" y="66" width="484" height="389">
-	</mx:Canvas>
-	<s:Button id="openMapBtn" x="560" y="196" label="Open" click="onOpenMap(event)"/>
 	
 	
 	<s:HGroup x="14" y="10" width="655" height="48" gap="0" verticalAlign="middle">

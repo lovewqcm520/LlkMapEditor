@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
 		 xmlns:s="library://ns.adobe.com/flex/spark" 
-		 xmlns:mx="library://ns.adobe.com/flex/mx" width="678" height="350"
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="785" height="500"
 		 xmlns:view="com.jack.view.*" xmlns:component="com.jack.view.component.*">
 	<fx:Declarations>
 		<!-- Place non-visual elements (e.g., services, value objects) here -->
@@ -9,6 +9,7 @@
 	
 	<fx:Script>
 		<![CDATA[
+			import com.jack.util.DisplayUtil;
 			import com.jack.util.DrawUtil;
 			import com.jack.util.GameUtil;
 			import com.jack.util.NumberUtil;
@@ -26,21 +27,23 @@
 			private var map:MapVO;
 			
 			private var EMPTY_COLOR:uint = 0xffffff;
-			private var ITEM_COLOR:uint = 0x338881;
+			private var ITEM_COLOR:uint = 0x00ff00;
 			
 			private var mapCol:int;
 			private var mapRow:int;
-			private var nExistItems:int;
 			private var curColorSelected:uint = EMPTY_COLOR;
 
 			private var previousOriginalMap:MapVO;
 			private var previousMapIndex:int;
+
+			private var totalMaps:int;
+			private var isLastMapSaved:Boolean=false;
 			
 			public function createNewProject(voProject:ProjectVO):void
 			{
 				this.voProject = voProject;
 				
-				var totalMaps:int = 	voProject.totalMaps;
+				totalMaps = 	voProject.totalMaps;
 				var maxMapCol:int = 	voProject.maxMapCol;
 				var maxMapRow:int = 	voProject.maxMapRow;
 				var isEmpty:Boolean = 	voProject.isEmpty;
@@ -55,6 +58,10 @@
 					m.level = i+1;
 					m.name = "map " + (i+1);
 					m.setMapSize(maxMapCol, maxMapRow);
+					m.numRefreshTool=1;
+					m.numBombTool=1;
+					m.numFindTool=1;
+					m.totalTime = 50;
 					if(!isEmpty)
 						m.random(30, 4, 2);
 					arr.push(m);
@@ -76,6 +83,92 @@
 					editPanel.removeEventListener(MouseEvent.MOUSE_UP, onEditContainerMouseUp);
 			}
 			
+			public function saveProject():void
+			{
+				// if the previous activate map has been modified, ask user to save the change or ignore
+				if(map && previousOriginalMap && !GameUtil.isMapDataEqual(map, previousOriginalMap))
+				{
+					// save the previous map
+					saveCurMap();
+				}
+				
+				var totalXml:XML = 
+					<maps>
+					</maps>;	
+				
+				var m:MapVO;
+				var xml:XML;
+				for (var i:int = 0; i < totalMaps; i++) 
+				{
+					m = mapList.dataProvider.getItemAt(i) as MapVO;
+					if(m)
+					{
+						xml = m.exportAsXML();
+						totalXml.appendChild(xml);
+					}
+				}				
+				
+				var file:FileReference = new FileReference();
+				file.save(totalXml, voProject.name + ".llk");
+			}
+			
+			public function exportProjectData():void
+			{
+				// if the previous activate map has been modified, ask user to save the change or ignore
+				if(map && previousOriginalMap && !GameUtil.isMapDataEqual(map, previousOriginalMap))
+				{
+					// save the previous map
+					saveCurMap();
+				}
+				
+				var totalXml:XML = 
+					<maps>
+					</maps>;	
+				
+				var m:MapVO;
+				var xml:XML;
+				for (var i:int = 0; i < totalMaps; i++) 
+				{
+					m = mapList.dataProvider.getItemAt(i) as MapVO;
+					if(m)
+					{
+						xml = m.exportAsXML();
+						totalXml.appendChild(xml);
+					}
+				}				
+				
+				var file:FileReference = new FileReference();
+				file.save(totalXml, voProject.name + ".xml");
+			}
+			
+			public function importExistingProject(xml:XML):void
+			{
+				var m:MapVO;		
+				var arr:Array = [];
+				// parse the project xml
+				var xmlList:XMLList = xml.children();				
+				for each (var x:XML in xmlList) 
+				{
+					m = new MapVO();					
+					// set the item data
+					m.importFromXML(x);
+					arr.push(m);
+				}				
+				// set the mao list data provider
+				mapList.dataProvider = new ArrayCollection(arr);
+				// auto select first one map
+				mapList.selectedIndex = 0;
+				// show the map
+				showMap();
+			}
+			
+			public function dispose():void
+			{
+				voProject = null;
+				map = null;
+				previousOriginalMap = null;
+			}
+			
 			protected function mapList_changeHandler(event:IndexChangeEvent):void
 			{
 				previousMapIndex = event.oldIndex;
@@ -88,16 +181,20 @@
 				index = index == -1 ? mapList.selectedIndex : index;
 				
 				// if the previous activate map has been modified, ask user to save the change or ignore
-				if(map && previousOriginalMap && !GameUtil.isMapDataEqual(map, previousOriginalMap))
+				if(!isLastMapSaved && map && previousOriginalMap && !GameUtil.isMapDataEqual(map, previousOriginalMap))
 				{
+					// save the previous map
+					saveCurMap();
+					// get new map
 					map = mapList.dataProvider.getItemAt(index) as MapVO;
-					
+					// show alert
 					var text:String = previousOriginalMap.name + " has been modified, do you want save changes?";
 					var title:String = "Warning";
 					Alert.show(text, title, Alert.YES|Alert.NO, this, onSaveMapAlertCloseHandler);
 				}
 				else
 				{
+					isLastMapSaved = false;
 					map = mapList.dataProvider.getItemAt(index) as MapVO;
 					previousOriginalMap = map.clone();
 					drawNewMap();
@@ -116,6 +213,14 @@
 				stoneItemNumStepper.maximum = mapCol*mapRow;
 				stoneItemNumStepper.value = map.numStoneItems;
 				
+				refreshToolNumStepper.value = map.numRefreshTool;
+				bombToolNumStepper.value = map.numBombTool;
+				findToolNumStepper.value = map.numFindTool;
+				
+				totalTimeNumStepper.minimum = 30;
+				totalTimeNumStepper.maximum = 200;
+				totalTimeNumStepper.value = map.totalTime;		
+				
 				trace("Show map which index was ", index);
 			}
 			
@@ -128,10 +233,10 @@
 				{
 					editPanel = new Sprite();		
 					editPanel.graphics.beginFill(0xffffff, 1);
-					editPanel.graphics.drawRect(0, 0, 320, 320);
+					editPanel.graphics.drawRect(0, 0, 430, 430);
 					editPanel.graphics.endFill();
-					editPanel.x = 0;
-					editPanel.y = 0;
+					editPanel.x = 3;
+					editPanel.y = (panel.height-editPanel.height)/2;
 					panel.rawChildren.addChild(editPanel);
 					// init the default edit container
 					DrawUtil.initMapEditContainer(editPanel);
@@ -144,6 +249,9 @@
 				
 				curColorSelected = itemRadio.selected ? ITEM_COLOR : EMPTY_COLOR;
 				refreshMap();
+				
+				// disable map edit until use click "edit" button
+				disableMapEdit();
 			}
 			
 			protected function mapList_clickHandler(event:MouseEvent):void
@@ -207,12 +315,10 @@
 				if(color == EMPTY_COLOR)
 				{
 					map.setItem(i, j, MapVO.ITEM_EMPTY);
-					nExistItems--;
 				}
 				else
 				{
 					map.setItem(i, j, MapVO.ITEM_NORMAL);
-					nExistItems++;
 				}
 				
 				// update the item num
@@ -241,8 +347,6 @@
 				// redraw the map gridding
 				DrawUtil.drawGridding(mapCol, mapRow);
 				
-				nExistItems = 0;
-				
 				// refresh the map gridding
 				for (var i:int = 0; i < mapCol; i++) 
 				{
@@ -253,12 +357,10 @@
 						if(n < 0)
 						{
 							DrawUtil.colorTile(i, j, EMPTY_COLOR);
-							nExistItems--;
 						}
 						else
 						{
 							DrawUtil.colorTile(i, j, ITEM_COLOR);
-							nExistItems++;
 						}
 					}					
 				}			
@@ -292,23 +394,24 @@
 			protected function randomBtn_clickHandler(event:MouseEvent):void
 			{
 				// TODO Auto-generated method stub
-				
+				map.random(map.numTotalItems, map.numToolItems, map.numStoneItems);
+				refreshMap();				
 			}
 			
 			protected function saveBtn_clickHandler(event:MouseEvent):void
 			{
-				// TODO Auto-generated method stub
-				
+				saveCurMap();
 			}
 			
 			protected function editBtn_clickHandler(event:MouseEvent):void
 			{
-				// TODO Auto-generated method stub
-				
+				enableMapEdit();
 			}
 			
 			private function saveCurMap():void
 			{
+				isLastMapSaved = true;
+				
 				var numTotalItems:int = totalItemNumStepper.value;
 				var numToolItems:int = toolItemNumStepper.value;
 				
@@ -324,35 +427,95 @@
 					return;
 				}
 				
-				// save map data
+				// save map data			
+				map.numTotalItems = totalItemNumStepper.value;
+				map.numToolItems = toolItemNumStepper.value;
+				map.numStoneItems = stoneItemNumStepper.value;
+				
+				map.numRefreshTool = refreshToolNumStepper.value;
+				map.numBombTool = bombToolNumStepper.value;
+				map.numFindTool = findToolNumStepper.value;
+				
+				map.totalTime = totalTimeNumStepper.value;	
+				
+				// clone the map
+				previousOriginalMap = map.clone();
+				trace("Save " + map.name + " successful.");
 			}
 			
+			private function disableMapEdit():void
+			{
+				// disable map editor
+				DisplayUtil.convertToGrayscale(editPanel);
+				
+				totalItemNumStepper.enabled = false;
+				toolItemNumStepper.enabled = false;
+				stoneItemNumStepper.enabled = false;
+				totalTimeNumStepper.enabled = false;
+				refreshToolNumStepper.enabled = false;
+				bombToolNumStepper.enabled = false;
+				findToolNumStepper.enabled = false;
+				
+				randomBtn.enabled = false;
+				saveBtn.enabled = false;
+				
+				editBtn.setFocus();
+			}
+			
+			private function enableMapEdit():void
+			{
+				// disable map editor
+				DisplayUtil.convertToNormal(editPanel);
+				
+				totalItemNumStepper.enabled = true;
+				toolItemNumStepper.enabled = true;
+				stoneItemNumStepper.enabled = true;
+				totalTimeNumStepper.enabled = true;
+				refreshToolNumStepper.enabled = true;
+				bombToolNumStepper.enabled = true;
+				findToolNumStepper.enabled = true;
+				
+				randomBtn.enabled = true;
+				saveBtn.enabled = true;
+				
+				saveBtn.setFocus();
+			}
 		]]>
 	</fx:Script>
 	
-	<s:List id="mapList" x="5" y="15" width="166" height="320" change="mapList_changeHandler(event)"
+	<s:List id="mapList" x="0" y="0" width="166" height="500" change="mapList_changeHandler(event)"
 			clear="mapList_clearHandler(event)" click="mapList_clickHandler(event)"
 			contentBackgroundColor="#10726F">
 	</s:List>
 
-	<mx:Canvas id="panel" x="174" y="16" width="504" height="320" backgroundColor="#41827D">
-		<s:VGroup x="325" y="159" width="90" height="139" gap="10">
-			<s:Button id="editBtn" width="85" label="Edit" click="editBtn_clickHandler(event)"/>
-			<s:Button id="randomBtn" width="85" label="Random" click="randomBtn_clickHandler(event)"/>
-			<s:Button id="saveBtn" width="85" label="Save" click="saveBtn_clickHandler(event)"/>
+	<mx:Canvas id="panel" x="165" y="1" width="620" height="500" backgroundColor="#41827D">
+		<s:VGroup x="485" y="356" width="90" height="139" gap="10">
 		</s:VGroup>
-		<s:Label x="325" y="52" text="tool item number"/>
-		<s:Label x="325" y="24" text="normal item number"/>
-		<component:MyNumericStepper id="totalItemNumStepper" x="439" y="17"/>
-		<component:MyNumericStepper id="toolItemNumStepper" x="439" y="45"/>
-		<s:Label x="325" y="81" text="stone item number"/>
-		<s:Label x="325" y="121" text="Choose a item type"/>
-		<component:MyNumericStepper id="stoneItemNumStepper" x="439" y="74"/>
+		<s:Label x="440" y="92" text="tool items"/>
+		<s:Label x="440" y="64" text="total items"/>
+		<component:MyNumericStepper id="totalItemNumStepper" x="554" y="57"/>
+		<component:MyNumericStepper id="toolItemNumStepper" x="554" y="85"/>
+		<s:Label x="440" y="121" text="stone items"/>
+		<s:Label x="440" y="316" text="Choose a item type"/>
+		<component:MyNumericStepper id="stoneItemNumStepper" x="554" y="114"/>
+		<s:Label x="440" y="153" text="total time"/>
+		<component:MyNumericStepper id="totalTimeNumStepper" x="554" y="146"/>
+		<s:Label x="440" y="184" text="refresh tool"/>
+		<component:MyNumericStepper id="refreshToolNumStepper" x="554" y="177"/>
+		<s:Label x="440" y="217" text="bomb tool"/>
+		<component:MyNumericStepper id="bombToolNumStepper" x="554" y="210"/>
+		<s:Label x="440" y="245" text="find tool"/>
+		<component:MyNumericStepper id="findToolNumStepper" x="554" y="238"/>
 		<s:RadioButtonGroup id="radiogroup1"/>
-		<s:VGroup x="437" y="108" width="57">
-			<s:RadioButton id="emptyRadio" label="Empty" groupName="radiogroup1"/>
-			<s:RadioButton id="itemRadio" label="Item" groupName="radiogroup1" selected="true"/>
-		</s:VGroup>
+		<s:Button id="editBtn" x="485" y="374" width="85" label="Edit"
+				  click="editBtn_clickHandler(event)"/>
+		<s:Button id="randomBtn" x="485" y="405" width="85" label="Random"
+				  click="randomBtn_clickHandler(event)"/>
+		<s:Button id="saveBtn" x="485" y="436" width="85" label="Save"
+				  click="saveBtn_clickHandler(event)"/>
+		<s:RadioButton id="emptyRadio" x="552" y="303" label="Empty" groupName="radiogroup1"/>
+		<s:RadioButton id="itemRadio" x="552" y="327" label="Item" groupName="radiogroup1"
+					   selected="true"/>
 	</mx:Canvas>
 	
 	

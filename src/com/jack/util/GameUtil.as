@@ -13,7 +13,15 @@ package com.jack.util
 			if(a.name == b.name && 
 			   a.level == b.level && 
 			   a.width == b.width && 
-			   a.height == b.height)
+			   a.height == b.height &&
+			   a.numTotalItems == b.numTotalItems &&
+			   a.numNormalItems == b.numNormalItems &&
+			   a.numToolItems == b.numToolItems &&
+			   a.numStoneItems == b.numStoneItems &&
+			   a.numRefreshTool == b.numRefreshTool &&
+			   a.numBombTool == b.numBombTool &&
+			   a.numFindTool == b.numFindTool &&
+			   a.totalTime == b.totalTime)
 			{
 				var w:int = a.width;
 				var h:int = a.height;

@@ -17,6 +17,13 @@ package com.jack.vo
 		public var numToolItems:int;
 		public var numStoneItems:int;
 		
+		public var numRefreshTool:int;
+		public var numBombTool:int;
+		public var numFindTool:int;
+		
+		public var totalTime:int;
+		public var warningTime:int;
+		
 		private var actualWidth:int;
 		private var actualHeight:int;
 
@@ -38,9 +45,19 @@ package com.jack.vo
 			var m:MapVO = new MapVO();
 			m.name = this.name;
 			m.level = this.level;
+		    m.setMapSize(this.width, this.height);
+			
 			m.numTotalItems = this.numTotalItems;
 			m.numToolItems = this.numToolItems;
-		    m.setMapSize(this.width, this.height);
+			m.numNormalItems = this.numNormalItems;
+			m.numStoneItems = this.numStoneItems;
+			
+			m.numRefreshTool = this.numRefreshTool;
+			m.numBombTool = this.numBombTool;
+			m.numFindTool = this.numFindTool;
+			
+			m.totalTime = this.totalTime;
+			m.warningTime = this.warningTime;
 			
 			for (var x:int = 0; x < width; x++) 
 			{
@@ -210,19 +227,59 @@ package com.jack.vo
 			map.appendChild(<height>{height}</height>);
 			map.appendChild(<actualWidth>{actualWidth}</actualWidth>);
 			map.appendChild(<actualHeight>{actualHeight}</actualHeight>);
+			
+			map.appendChild(<numTotalItems>{numTotalItems}</numTotalItems>);
+			map.appendChild(<numToolItems>{numToolItems}</numToolItems>);
+			map.appendChild(<numStoneItems>{numStoneItems}</numStoneItems>);
+			map.appendChild(<numRefreshTool>{numRefreshTool}</numRefreshTool>);
+			map.appendChild(<numBombTool>{numBombTool}</numBombTool>);
+			map.appendChild(<numFindTool>{numFindTool}</numFindTool>);
+			map.appendChild(<totalTime>{totalTime}</totalTime>);
+			
+			warningTime = totalTime*0.85;
+			map.appendChild(<warningTime>{warningTime}</warningTime>);
+			
 			map.appendChild(<data>{str}</data>);
 			
 			return map;
 		}
 		
-		public function importFromXML(xml:XML):void
+		public function importFromXML(x:XML):void
 		{
+			var data:String;
 			
+			name = 				x.name;
+			level = 			x.level;
+			width = 			x.width;
+			height = 			x.height;
+			actualWidth = 		x.actualWidth;
+			actualHeight = 		x.actualHeight;
+			numTotalItems =		x.numTotalItems;
+			numToolItems = 		x.numToolItems;
+			numStoneItems =	 	x.numStoneItems;
+			numRefreshTool = 	x.numRefreshTool;
+			numBombTool = 		x.numBombTool;
+			numFindTool = 		x.numFindTool;
+			totalTime = 		x.totalTime;
+			warningTime = 		x.warningTime;
+			data = 				x.data;
 			
-			
+			// init the map data
+			setMapSize(width, height);
+			// set the item data
+			var arr:Array = data.split(",");
+			// default set all data
+			for (var i:int = 0; i < actualHeight; i++) 
+			{
+				for (var j:int = 0; j < actualWidth; j++) 
+				{
+					map.set(j, i, int(arr[i*actualWidth + j]));
+				}				
+			}		
 			// update the items type collection
 			updateItemsCollection();
 		}
 
+		
 	}
 }
