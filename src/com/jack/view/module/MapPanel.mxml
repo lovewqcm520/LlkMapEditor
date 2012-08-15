@@ -36,14 +36,12 @@
 			private var previousOriginalMap:MapVO;
 			private var previousMapIndex:int;
 
-			private var totalMaps:int;
 			private var isLastMapSaved:Boolean=false;
 			
 			public function createNewProject(voProject:ProjectVO):void
 			{
 				this.voProject = voProject;
 				
-				totalMaps = 	voProject.totalMaps;
 				var maxMapCol:int = 	voProject.maxMapCol;
 				var maxMapRow:int = 	voProject.maxMapRow;
 				var isEmpty:Boolean = 	voProject.isEmpty;
@@ -52,7 +50,7 @@
 				var m:MapVO;
 				var i:int;
 							
-				for (i = 0; i < totalMaps; i++) 
+				for (i = 0; i < voProject.totalMaps; i++) 
 				{
 					m = new MapVO();
 					m.level = i+1;
@@ -93,12 +91,14 @@
 				}
 				
 				var totalXml:XML = 
-					<maps>
-					</maps>;	
+					<maps name={voProject.name}
+				totalMaps={voProject.totalMaps}
+				maxMapCol={voProject.maxMapCol}
+				maxMapRow={voProject.maxMapRow} />	
 				
 				var m:MapVO;
 				var xml:XML;
-				for (var i:int = 0; i < totalMaps; i++) 
+				for (var i:int = 0; i < voProject.totalMaps; i++) 
 				{
 					m = mapList.dataProvider.getItemAt(i) as MapVO;
 					if(m)
@@ -120,14 +120,16 @@
 					// save the previous map
 					saveCurMap();
 				}
-				
+
 				var totalXml:XML = 
-					<maps>
-					</maps>;	
+					<maps name={voProject.name}
+				totalMaps={voProject.totalMaps}
+				maxMapCol={voProject.maxMapCol}
+				maxMapRow={voProject.maxMapRow} />
 				
 				var m:MapVO;
 				var xml:XML;
-				for (var i:int = 0; i < totalMaps; i++) 
+				for (var i:int = 0; i < voProject.totalMaps; i++) 
 				{
 					m = mapList.dataProvider.getItemAt(i) as MapVO;
 					if(m)
@@ -146,7 +148,15 @@
 				var m:MapVO;		
 				var arr:Array = [];
 				// parse the project xml
-				var xmlList:XMLList = xml.children();				
+				var xmlList:XMLList = xml.children();
+				// get the project info
+				if(!voProject)
+					voProject = new ProjectVO();
+				voProject.name = xml.attribute("name");
+				voProject.totalMaps = xml.attribute("totalMaps");
+				voProject.maxMapCol = xml.attribute("maxMapCol");
+				voProject.maxMapRow = xml.attribute("maxMapRow");
+				// get the maps info
 				for each (var x:XML in xmlList) 
 				{
 					m = new MapVO();					

@@ -216,30 +216,25 @@ package com.jack.vo
 		
 		public function exportAsXML():XML
 		{
-			var str:String = exportToString();
+			var str:String = exportToString();			
+			warningTime = totalTime*0.85;
 			
 			var map:XML =
-				<map>
-				</map>;			
-			map.appendChild(<name>{name}</name>);
-			map.appendChild(<level>{level}</level>);
-			map.appendChild(<width>{width}</width>);
-			map.appendChild(<height>{height}</height>);
-			map.appendChild(<actualWidth>{actualWidth}</actualWidth>);
-			map.appendChild(<actualHeight>{actualHeight}</actualHeight>);
-			
-			map.appendChild(<numTotalItems>{numTotalItems}</numTotalItems>);
-			map.appendChild(<numToolItems>{numToolItems}</numToolItems>);
-			map.appendChild(<numStoneItems>{numStoneItems}</numStoneItems>);
-			map.appendChild(<numRefreshTool>{numRefreshTool}</numRefreshTool>);
-			map.appendChild(<numBombTool>{numBombTool}</numBombTool>);
-			map.appendChild(<numFindTool>{numFindTool}</numFindTool>);
-			map.appendChild(<totalTime>{totalTime}</totalTime>);
-			
-			warningTime = totalTime*0.85;
-			map.appendChild(<warningTime>{warningTime}</warningTime>);
-			
-			map.appendChild(<data>{str}</data>);
+			<map name={name}
+			level={level}
+			width={width}
+			height={height}
+			actualWidth={actualWidth}
+			actualHeight={actualHeight}
+			numTotalItems={numTotalItems}
+			numToolItems={numToolItems}
+			numStoneItems={numStoneItems}
+			numRefreshTool={numRefreshTool}
+			numBombTool={numBombTool}
+			numFindTool={numFindTool}
+			totalTime={totalTime}
+			warningTime={warningTime}
+			data={str}/>;			
 			
 			return map;
 		}
@@ -248,21 +243,21 @@ package com.jack.vo
 		{
 			var data:String;
 			
-			name = 				x.name;
-			level = 			x.level;
-			width = 			x.width;
-			height = 			x.height;
-			actualWidth = 		x.actualWidth;
-			actualHeight = 		x.actualHeight;
-			numTotalItems =		x.numTotalItems;
-			numToolItems = 		x.numToolItems;
-			numStoneItems =	 	x.numStoneItems;
-			numRefreshTool = 	x.numRefreshTool;
-			numBombTool = 		x.numBombTool;
-			numFindTool = 		x.numFindTool;
-			totalTime = 		x.totalTime;
-			warningTime = 		x.warningTime;
-			data = 				x.data;
+			name = 				x.attribute("name");
+			level = 			x.attribute("level");
+			width = 			x.attribute("width");
+			height = 			x.attribute("height");
+			actualWidth = 		x.attribute("actualWidth");
+			actualHeight = 		x.attribute("actualHeight");
+			numTotalItems =		x.attribute("numTotalItems");
+			numToolItems = 		x.attribute("numToolItems");
+			numStoneItems =	 	x.attribute("numStoneItems");
+			numRefreshTool = 	x.attribute("numRefreshTool");
+			numBombTool = 		x.attribute("numBombTool");
+			numFindTool = 		x.attribute("numFindTool");
+			totalTime = 		x.attribute("totalTime");
+			warningTime = 		x.attribute("warningTime");
+			data = 				x.attribute("data");
 			
 			// init the map data
 			setMapSize(width, height);
