@@ -26,12 +26,13 @@
 			private var editPanel:Sprite;
 			private var map:MapVO;
 			
-			private var EMPTY_COLOR:uint = 0xffffff;
-			private var ITEM_COLOR:uint = 0x00ff00;
+			private var COLOR_EMPTY:uint = 0xffffff;
+			private var COLOR_ITEM:uint = 0x00ff00;
+			private var COLOR_STONE:uint = 0x511e1b;
 			
 			private var mapCol:int;
 			private var mapRow:int;
-			private var curColorSelected:uint = EMPTY_COLOR;
+			private var curColorSelected:uint = COLOR_EMPTY;
 
 			private var previousOriginalMap:MapVO;
 			private var previousMapIndex:int;
@@ -227,7 +228,7 @@
 				bombToolNumStepper.value = map.numBombTool;
 				findToolNumStepper.value = map.numFindTool;
 				
-				totalTimeNumStepper.minimum = 30;
+				totalTimeNumStepper.minimum = 10;
 				totalTimeNumStepper.maximum = 200;
 				totalTimeNumStepper.value = map.totalTime;		
 				
@@ -257,7 +258,7 @@
 					addEventListener(Event.DEACTIVATE, onDeactivate);
 				}
 				
-				curColorSelected = itemRadio.selected ? ITEM_COLOR : EMPTY_COLOR;
+				curColorSelected = itemRadio.selected ? COLOR_ITEM : stoneRadio.selected ? COLOR_STONE : COLOR_EMPTY;
 				refreshMap();
 				
 				// disable map edit until use click "edit" button
@@ -300,7 +301,7 @@
 			
 			private function colorTile(mx:Number, my:Number):void
 			{
-				curColorSelected = itemRadio.selected ? ITEM_COLOR : EMPTY_COLOR;
+				curColorSelected = itemRadio.selected ? COLOR_ITEM : stoneRadio.selected ? COLOR_STONE : COLOR_EMPTY;
 				
 				var i:int = int((mx/editPanel.width)*mapCol);
 				var j:int = int((my/editPanel.height)*mapRow);
@@ -311,20 +312,28 @@
 			
 			private function colorTiles(i:int, j:int, color:uint):void
 			{
-				if(map.getItem(i, j) == 1 && color != EMPTY_COLOR)
+				if(map.getItem(i, j) == MapVO.ITEM_NORMAL && color == COLOR_ITEM)
 				{
 					return;
 				}
-				if(map.getItem(i, j) == -1 && color == EMPTY_COLOR)
+				if(map.getItem(i, j) == MapVO.ITEM_EMPTY && color == COLOR_EMPTY)
+				{
+					return;
+				}
+				if(map.getItem(i, j) == MapVO.ITEM_STONE && color == COLOR_STONE)
 				{
 					return;
 				}
 				// draw map
 				DrawUtil.colorTile(i, j, color);
 				// update the map data
-				if(color == EMPTY_COLOR)
+				if(color == COLOR_EMPTY)
 				{
 					map.setItem(i, j, MapVO.ITEM_EMPTY);
+				}
+				else if(color == COLOR_STONE)
+				{
+					map.setItem(i, j, MapVO.ITEM_STONE);
 				}
 				else
 				{
@@ -333,6 +342,7 @@
 				
 				// update the item num
 				totalItemNumStepper.value = map.numTotalItems;
+				stoneItemNumStepper.value = map.numStoneItems;
 			}
 			
 			protected function onEditContainerMouseMove(event:MouseEvent):void
@@ -364,13 +374,17 @@
 					{
 						var n:int = map.getItem(i, j);						
 						// update the map data
-						if(n < 0)
+						if(n == MapVO.ITEM_EMPTY)
 						{
-							DrawUtil.colorTile(i, j, EMPTY_COLOR);
+							DrawUtil.colorTile(i, j, COLOR_EMPTY);
 						}
-						else
+						else if(n == MapVO.ITEM_STONE)
 						{
-							DrawUtil.colorTile(i, j, ITEM_COLOR);
+							DrawUtil.colorTile(i, j, COLOR_STONE);
+						}
+						else if(n == MapVO.ITEM_NORMAL)
+						{
+							DrawUtil.colorTile(i, j, COLOR_ITEM);
 						}
 					}					
 				}			
@@ -424,11 +438,12 @@
 				
 				var numTotalItems:int = totalItemNumStepper.value;
 				var numToolItems:int = toolItemNumStepper.value;
+				var numStoneItems:int = stoneItemNumStepper.value;
 				
 				// validate total items and tool items
 				if( numTotalItems == 0 ||
 					numTotalItems > mapCol*mapRow ||
-					!NumberUtil.isEven(numTotalItems) || 
+					(!NumberUtil.isEven(numTotalItems) && NumberUtil.isEven(numStoneItems)) || 
 					!NumberUtil.isEven(numToolItems)
 					)
 				{
@@ -523,8 +538,9 @@
 				  click="randomBtn_clickHandler(event)"/>
 		<s:Button id="saveBtn" x="485" y="436" width="85" label="Save"
 				  click="saveBtn_clickHandler(event)"/>
-		<s:RadioButton id="emptyRadio" x="552" y="303" label="Empty" groupName="radiogroup1"/>
-		<s:RadioButton id="itemRadio" x="552" y="327" label="Item" groupName="radiogroup1"
+		<s:RadioButton id="emptyRadio" x="552" y="298" label="Empty" groupName="radiogroup1"/>
+		<s:RadioButton id="stoneRadio" x="552" y="319" label="Stone" groupName="radiogroup1"/>
+		<s:RadioButton id="itemRadio" x="552" y="340" label="Item" groupName="radiogroup1"
 					   selected="true"/>
 	</mx:Canvas>
 	

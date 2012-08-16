@@ -30,7 +30,7 @@ package com.jack.vo
 		public static var ITEM_EMPTY:int = -1;
 		public static var ITEM_NORMAL:int = 1;
 		public static var ITEM_TOOL:int = 2;
-		public static var ITEM_STONE:int = 3;
+		public static var ITEM_STONE:int = -2;
 		
 		private var map:Array2;
 
@@ -198,6 +198,7 @@ package com.jack.vo
 			}	
 			
 			numTotalItems = totalItems;
+			numStoneItems = stoneItems;
 		}
 		
 		public function exportToString():String
